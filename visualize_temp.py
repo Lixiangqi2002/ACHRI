@@ -1,0 +1,55 @@
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+# 数据目录
+data_dir = "data"
+
+# 实验样本和类别
+samples = ["byz", "lhb", "lxq", "qzw", "wyk", "zxj"]
+categories = ["min", "max", "avg"]
+colors = {"min": "red", "max": "blue", "avg": "green"}  # 颜色映射
+
+# 创建 2 行 3 列的子图布局
+fig, axes = plt.subplots(2, 3, figsize=(18, 10))
+fig.suptitle("Nose Temperature Comparison (Baseline vs Exp, Normalized)", fontsize=16)
+
+# 遍历每个实验样本
+for idx, sample in enumerate(samples):
+    row, col = divmod(idx, 3)  # 计算子图位置
+    ax = axes[row, col]
+    ax.set_title(f"Sample: {sample.upper()}")
+    
+    for category in categories:
+        # 文件路径
+        # baseline_file = os.path.join(data_dir, f"nose_temp_{category}_{sample}_baseline.csv")
+        baseline_file = os.path.join(data_dir, f"nose_temp_avg_{sample}_baseline.csv")
+
+        exp_file = os.path.join(data_dir, f"nose_temp_{category}_{sample}_exp.csv")
+
+        if os.path.exists(baseline_file) and os.path.exists(exp_file):
+            # 读取数据
+            baseline_df = pd.read_csv(baseline_file)
+            exp_df = pd.read_csv(exp_file)
+
+            # 计算 baseline 平均值
+            baseline_mean = baseline_df.iloc[:, 0].mean()
+            
+            # 画 baseline 直线
+            # ax.axhline(y=baseline_mean, color=colors[category], linestyle="dashed", label=f"{category} - Baseline Mean")
+
+            # 归一化 exp 数据
+            exp_values = exp_df.iloc[:, 0] / baseline_mean
+            
+            # 画 exp 归一化曲线
+            ax.plot(exp_values, label=f"{category} - Exp", color=colors[category])
+
+    ax.set_xlabel("Time")
+    ax.set_ylabel("Normalized Temperature")
+    ax.legend()
+    ax.grid()
+
+# 调整布局
+plt.tight_layout(rect=[0, 0, 1, 0.96])
+plt.show()
