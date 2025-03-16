@@ -19,7 +19,7 @@ The final score is computed using a weighted formula to give an objective measur
 ### Mid Level Fusion
 
 #### HR & HRV：
-"""
+```
 Test Loss (MSE): 0.0130
 RMSE: 0.1163
 MAE: 0.0847
@@ -37,10 +37,10 @@ True: 0.9000, Predicted: 0.4458, Error: -0.4542
 True: 0.0000, Predicted: 0.5023, Error: 0.5023
 True: 0.1667, Predicted: 0.7209, Error: 0.5543
 True: 0.9412, Predicted: 0.3652, Error: -0.5760
-"""
+```
 
 #### PPG：
-"""
+```
 Test Loss (MSE): 0.0151
 RMSE: 0.1265
 MAE: 0.0912
@@ -58,10 +58,10 @@ True: 0.8333, Predicted: 0.2715, Error: -0.5618
 True: 0.9000, Predicted: 0.3211, Error: -0.5789
 True: 1.0000, Predicted: 0.3780, Error: -0.6220
 True: 0.0833, Predicted: 0.7269, Error: 0.6436
-"""
+```
 
 #### Temperature:
-"""
+```
 Test Loss (MSE): 0.0206
 RMSE: 0.1434
 MAE: 0.1023
@@ -79,4 +79,4 @@ True: 0.1000, Predicted: 0.6827, Error: 0.5827
 True: 0.1000, Predicted: 0.7490, Error: 0.6490
 True: 1.0000, Predicted: 0.3428, Error: -0.6572
 True: 1.0000, Predicted: 0.3092, Error: -0.6908
-"""
+```
