@@ -9,7 +9,7 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 class TemperatureEncoder(nn.Module):
-    def __init__(self, input_dim=3, hidden_dim=16, num_layers=2, window_size=5):
+    def __init__(self, input_dim=3, hidden_dim=8, num_layers=2, window_size=5):
         super(TemperatureEncoder, self).__init__()
         self.window_size = window_size  # Sliding window size (seconds)
 
@@ -22,7 +22,7 @@ class TemperatureEncoder(nn.Module):
         )
 
         # Map to 16-dimensional features
-        self.fc = nn.Linear(hidden_dim, 16)
+        self.fc = nn.Linear(hidden_dim, 8)
 
 
     def forward(self, x):
@@ -36,7 +36,7 @@ class TemperatureEncoder(nn.Module):
 
 
 class EmotionRegressor(nn.Module):
-    def __init__(self, input_dim=16):
+    def __init__(self, input_dim=8):
         super(EmotionRegressor, self).__init__()
         self.mlp = nn.Sequential(
             nn.Linear(input_dim, 1),
