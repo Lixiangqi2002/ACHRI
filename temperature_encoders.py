@@ -87,7 +87,8 @@ if __name__=="__main__":
         print(label)
         break
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    print('Using device:', device)
     encoder = TemperatureEncoder(window_size=5).to(device)
     regressor = EmotionRegressor().to(device)
 
@@ -111,7 +112,7 @@ if __name__=="__main__":
         encoder.train()
         regressor.train()
         train_loss = 0
-
+        counter = 0
         for batch_temp, _, _, batch_y in train_loader:
             batch_temp, batch_y = batch_temp.to(device), batch_y.to(device)
 
@@ -123,7 +124,7 @@ if __name__=="__main__":
             optimizer.step()
 
             train_loss += loss.item()
-
+        print('count', counter)
         train_loss /= len(train_loader)
         train_losses.append(train_loss)  # Store training loss
 

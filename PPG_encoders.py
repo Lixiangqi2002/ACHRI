@@ -68,7 +68,7 @@ if __name__=="__main__":
 
 
     dataset = MultiModalDataset(temp_data_dir, ppg_data_dir,hr_data_dir, label_path)
-
+    print(len(dataset))
     train_size = int(0.7 * len(dataset))  # 70%
     val_size = int(0.15 * len(dataset))   # 15%
     test_size = len(dataset) - train_size - val_size  # 15%
@@ -93,7 +93,8 @@ if __name__=="__main__":
         print(label)
         break
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    print('Using device:', device)
     encoder = PPGEncoder().to(device)
     regressor = EmotionRegressor().to(device)
 
