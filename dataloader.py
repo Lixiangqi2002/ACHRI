@@ -122,6 +122,7 @@ class MultiModalDataset(Dataset):
         ppg_data = self.person_ppg_data[person_name]
         hr_data = self.person_hr_data[person_name]
 
+        # temp part
         # get 1 second of temperature data (6, 3)
         temp_start = time_idx * 6
         temp_end = temp_start + 6
@@ -129,6 +130,8 @@ class MultiModalDataset(Dataset):
                                 temp_data["max"][temp_start:temp_end], 
                                 temp_data["avg"][temp_start:temp_end]
                                 ))  # (6, 3)
+        
+        # channing diff
         if temp_start == 0:
             temp_diff = np.zeros((6, 3))   
         else:
@@ -141,9 +144,16 @@ class MultiModalDataset(Dataset):
                 temp_data["avg"][prev_temp_start:prev_temp_end]
             ))  # (6, 3)
 
-            temp_diff = temp_slice - prev_temp 
+            temp_diff = temp_slice - prev_temp # (6, 3)
 
-        temp_slice = np.hstack((temp_slice, temp_diff)) # (6, 6)
+        # FFT to freq
+        freq_min = np.fft.fft(temp_data["min"][temp_start:temp_end], axis=0).real  # (6,)
+        freq_max = np.fft.fft(temp_data["max"][temp_start:temp_end], axis=0).real  # (6,)
+        freq_avg = np.fft.fft(temp_data["avg"][temp_start:temp_end], axis=0).real  # (6,)
+
+        temp_freq = np.hstack((freq_min, freq_max, freq_avg))  # (6, 3)
+
+        temp_slice = np.hstack((temp_slice, temp_freq)) # (6, 6) (min, max, avg, min_freq, max_freq, avg_freq)
         
 
         # get 1 second of PPG data (250, 2)
@@ -176,14 +186,14 @@ if __name__ == "__main__":
 
     dataset = MultiModalDataset(temp_data_dir, ppg_data_dir,hr_data_dir, label_path)
     dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
-
+    
     for temp, ppg, hr, label in dataloader:
         print(f"Nose Temperature : {temp.shape}")  # (batch_size, 6, 6)
         print(temp)
-        print(f"PPG Data: {ppg.shape}")  # (batch_size, 250, 2)
-        print(ppg)
-        print(f"HR Data: {hr.shape}") # (batch_size, 50, 2)
-        print(hr)
-        print(f"Labels: {label.shape}")  # (batch_size, 1)
-        print(label)
+        # print(f"PPG Data: {ppg.shape}")  # (batch_size, 250, 2)
+        # print(ppg)
+        # print(f"HR Data: {hr.shape}") # (batch_size, 50, 2)
+        # print(hr)
+        # print(f"Labels: {label.shape}")  # (batch_size, 1)
+        # print(label)
         break

@@ -15,7 +15,7 @@ class TemperatureEncoder(nn.Module):
 
         # LSTM to process temperature sequence
         self.lstm = nn.LSTM(
-            input_size=input_dim,  # Temperature data is 6-dimensional (min, max, avg, diff_min, diff_max, diff_avg)
+            input_size=input_dim,  # now 6 (min, max, avg, min_freq, max_freq, avg_freq)
             hidden_size=hidden_dim,
             num_layers=num_layers,  # Two-layer LSTM
             batch_first=True
@@ -44,7 +44,7 @@ class EmotionRegressor(nn.Module):
             # nn.Linear(64, 32),
             # nn.ReLU(),
             # nn.Linear(32, 1),
-            nn.Sigmoid() # Sigmoid activation for emotion prediction (0,1)
+            nn.Sigmoid() # Sigmoid activation for emotion prediction to (0,1)
         )
 
     def forward(self, x):
@@ -91,16 +91,15 @@ if __name__=="__main__":
     encoder = TemperatureEncoder(window_size=5).to(device)
     regressor = EmotionRegressor().to(device)
 
-
-    ##################################################
-    # training
-    ##################################################
     optimizer = optim.Adam(list(encoder.parameters()) + list(regressor.parameters()), lr=0.0005)
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.25, patience=5)
 
     criterion = nn.MSELoss()
     # criterion = weighted_mse_loss
 
+    ##################################################
+    # training
+    ##################################################
     epochs = 300
     best_val_loss = float("inf")
 
@@ -127,6 +126,9 @@ if __name__=="__main__":
         train_loss /= len(train_loader)
         train_losses.append(train_loss)  # Store training loss
 
+        ##################################################
+        # validation
+        ##################################################
         encoder.eval()
         regressor.eval()
         val_loss = 0
@@ -149,8 +151,9 @@ if __name__=="__main__":
         print(f"Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
         # scheduler.step(val_loss)
     print("Complete training!")
+
     ##################################################
-    # training
+    # testing
     ##################################################
     print("Testing...")
     encoder.load_state_dict(torch.load("weights/best_temperature_encoder.pth"))
@@ -222,13 +225,13 @@ if __name__=="__main__":
     plt.show()
 
 
-    # Plot training and validation loss
-    plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, label="Train Loss", marker="o")
-    plt.plot(val_losses, label="Validation Loss", marker="s")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.title("Training & Validation Loss")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    # # Plot training and validation loss
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(train_losses, label="Train Loss", marker="o")
+    # plt.plot(val_losses, label="Validation Loss", marker="s")
+    # plt.xlabel("Epochs")
+    # plt.ylabel("Loss")
+    # plt.title("Training & Validation Loss")
+    # plt.legend()
+    # plt.grid(True)
+    # plt.show()
