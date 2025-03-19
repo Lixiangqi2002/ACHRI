@@ -60,23 +60,23 @@ True: 1.0000, Predicted: 0.3780, Error: -0.6220
 True: 0.0833, Predicted: 0.7269, Error: 0.6436
 ```
 
-#### Temperature:
+#### Temperature (with freq, no channing rate):
 ```
-Test Loss (MSE): 0.0206
-RMSE: 0.1434
-MAE: 0.1023
-R² Score: 0.4650
-95% Confidence Interval for Error: (np.float64(-0.2753589608911493), np.float64(0.2861660029012778))
+Test Loss (MSE): 0.0159
+RMSE: 0.1266
+MAE: 0.0922
+R² Score: 0.5740
+95% Confidence Interval for Error: (-0.24776952998291013, 0.24837447288955805)
 
 Worst Predictions:
-True: 0.8824, Predicted: 0.3836, Error: -0.4988
-True: 0.8667, Predicted: 0.3315, Error: -0.5351
-True: 0.9000, Predicted: 0.3551, Error: -0.5449
-True: 0.9608, Predicted: 0.3827, Error: -0.5781
-True: 0.9412, Predicted: 0.3612, Error: -0.5799
-True: 0.9804, Predicted: 0.3999, Error: -0.5805
-True: 0.1000, Predicted: 0.6827, Error: 0.5827
-True: 0.1000, Predicted: 0.7490, Error: 0.6490
-True: 1.0000, Predicted: 0.3428, Error: -0.6572
-True: 1.0000, Predicted: 0.3092, Error: -0.6908
+True: 0.0333, Predicted: 0.4238, Error: 0.3905
+True: 0.9333, Predicted: 0.5336, Error: -0.3997
+True: 0.9394, Predicted: 0.5322, Error: -0.4072
+True: 0.7667, Predicted: 0.3344, Error: -0.4323
+True: 0.8824, Predicted: 0.4461, Error: -0.4362
+True: 0.8000, Predicted: 0.3486, Error: -0.4514
+True: 0.7000, Predicted: 0.2425, Error: -0.4575
+True: 0.0196, Predicted: 0.5063, Error: 0.4867
+True: 0.9000, Predicted: 0.3509, Error: -0.5491
+True: 1.0000, Predicted: 0.3559, Error: -0.6441
 ```
