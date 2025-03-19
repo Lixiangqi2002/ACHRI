@@ -26,7 +26,7 @@ class FusionModule(nn.Module):
     def forward(self, ppg_features, thermal_features, hr_features):
         # Concatenate features from each modality: 64+16+64 = 144.
         fused = torch.cat([ppg_features, thermal_features, hr_features], dim=1)
-        return self.fusion(fused)   # Scale output to [0,9]
+        return self.fusion(fused)   
 
 
 class LateFusionModel(nn.Module):
@@ -44,22 +44,22 @@ class LateFusionModel(nn.Module):
         return self.fusion(ppg_features, thermal_features, hr_features)
 
     def forward(self, ppg_data, thermal_data, hr_data):
-        ppg_features = self.ppg_encoder(ppg_data)         # expect (batch_size, 64)
-        hr_features = self.hr_encoder(hr_data)             # expect (batch_size, 64) but may be (batch_size, 48)
-        thermal_features = self.thermal_encoder(thermal_data)  # expect (batch_size, 32)
+        ppg_features = self.ppg_encoder(ppg_data)        
+        hr_features = self.hr_encoder(hr_data)             
+        thermal_features = self.thermal_encoder(thermal_data)  
         return self.fusion(ppg_features, thermal_features, hr_features) * 9
 
-# Instantiate your pre-trained encoders.
+# Instantiate pre-trained encoders.
 ppg_encoder = PPGEncoder(input_dim=2, num_layers=1, cnn_channels=64, lstm_hidden_dim=64)
 hr_encoder = HREncoder(input_dim=2, num_layers=1, cnn_channels=64, lstm_hidden_dim=64)
 thermal_encoder = TemperatureEncoder(input_dim=6, hidden_dim=16, num_layers=2, window_size=5)
 
-# Load your pre-trained weights:
+# Load pre-trained weights:
 ppg_encoder.load_state_dict(torch.load("weights/best_ppg_encoder.pth", map_location=torch.device("cpu")))
 hr_encoder.load_state_dict(torch.load("weights/best_hr_encoder.pth", map_location=torch.device("cpu")))
 thermal_encoder.load_state_dict(torch.load("weights/best_temperature_encoder.pth", map_location=torch.device("cpu")))
 
-# Option: Freeze the encoder parameters if you want to train only the fusion module.
+# Freeze the encoder parameters if you want to train only the fusion module.
 for param in ppg_encoder.parameters():
     param.requires_grad = False
 for param in hr_encoder.parameters():
