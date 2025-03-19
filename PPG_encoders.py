@@ -11,24 +11,56 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 class PPGEncoder(nn.Module):
-    def __init__(self, input_dim=2, num_layers=1, cnn_channels=64, lstm_hidden_dim=64):
+    def __init__(self,
+                 input_dim=2,
+                 cnn_channels=64,         # 卷积通道数增大
+                 lstm_hidden_dim=64,
+                 num_layers=3,            # LSTM 层数从 1 改为 2
+                 bidirectional=True,      # 可选：使用双向 LSTM
+                 dropout_prob=0.1):       # Dropout 概率
         super(PPGEncoder, self).__init__()
 
-        # CNN part: 1D convolution to extract local features
-        self.conv1 = nn.Conv1d(in_channels=input_dim, out_channels=cnn_channels, kernel_size=5, stride=1, padding=2)
-        self.conv2 = nn.Conv1d(in_channels=cnn_channels, out_channels=cnn_channels, kernel_size=5, stride=1, padding=2)
+        # ---------------------- 卷积部分（增加层数 + BatchNorm）----------------------
+        self.conv1 = nn.Conv1d(in_channels=input_dim,
+                               out_channels=cnn_channels,
+                               kernel_size=5,
+                               stride=1,
+                               padding=2)
+        self.bn1 = nn.BatchNorm1d(cnn_channels)
+
+        self.conv2 = nn.Conv1d(in_channels=cnn_channels,
+                               out_channels=cnn_channels,
+                               kernel_size=5,
+                               stride=1,
+                               padding=2)
+        self.bn2 = nn.BatchNorm1d(cnn_channels)
+
+        # 额外添加一层卷积
+        self.conv3 = nn.Conv1d(in_channels=cnn_channels,
+                               out_channels=cnn_channels,
+                               kernel_size=5,
+                               stride=1,
+                               padding=2)
+        self.bn3 = nn.BatchNorm1d(cnn_channels)
+
         self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
 
-        # LSTM part: learning temporal features
-        self.lstm = nn.LSTM(
-            input_size=cnn_channels,
-            hidden_size=lstm_hidden_dim,
-            num_layers=num_layers,
-            batch_first=True
-        )
+        # ---------------------- LSTM 部分（双向 + 多层 + Dropout）----------------------
+        self.bidirectional = bidirectional
+        self.lstm = nn.LSTM(input_size=cnn_channels,
+                            hidden_size=lstm_hidden_dim,
+                            num_layers=num_layers,
+                            batch_first=True,
+                            dropout=dropout_prob if num_layers > 1 else 0.0,
+                            bidirectional=bidirectional)
 
-        # Fully connected layer: map to 64 dimensions
-        self.fc = nn.Linear(lstm_hidden_dim, 64)
+        # 如果使用双向 LSTM，最终输出维度要 x2
+        final_lstm_dim = lstm_hidden_dim * (2 if bidirectional else 1)
+
+        # ---------------------- 全连接层 & Dropout ----------------------
+        # 这里的线性层输出依然是 64 维
+        self.fc = nn.Linear(final_lstm_dim, 64)
+        self.dropout = nn.Dropout(dropout_prob)
 
     def forward(self, x):
         """
@@ -42,6 +74,7 @@ class PPGEncoder(nn.Module):
         x = x.permute(0, 2, 1)  # Transform back to (batch_size, new_seq_len, cnn_channels)
         x, _ = self.lstm(x)  # LSTM processes temporal features
         x = x[:, -1, :]  # Take the output of the last time step of LSTM
+        x = self.dropout(x)
         return self.fc(x)  # (batch_size, 128)
 
 

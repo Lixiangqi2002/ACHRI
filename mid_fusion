@@ -1,0 +1,258 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import DataLoader, random_split
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+import scipy.stats as stats
+
+# -- 这里导入你写好的各自的Encoder --
+from temperature_encoders import TemperatureEncoder
+from PPG_encoders import PPGEncoder
+from hr_encoders import HREncoder
+
+# -- 同一个MultiModalDataset，可以一次性读出所有模态的数据 --
+from dataloader import MultiModalDataset
+
+
+class MidFusionRegressor(nn.Module):
+    """
+    使用自注意力(TransformerEncoder)来融合三路特征
+    """
+    def __init__(self, temp_dim=16, ppg_dim=64, hr_dim=64, hidden_dim=64, nhead=4):
+        super(MidFusionRegressor, self).__init__()
+        # 1) 将三个不同维度投影到相同 hidden_dim
+        self.temp_proj = nn.Linear(temp_dim, hidden_dim)
+        self.ppg_proj  = nn.Linear(ppg_dim, hidden_dim)
+        self.hr_proj   = nn.Linear(hr_dim, hidden_dim)
+
+        # 2) 定义 Transformer 编码层
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden_dim,
+            nhead=nhead,
+            dim_feedforward=128,  # 前馈网络内部维度，可适度增大
+            activation='relu',
+            batch_first=False  # 注意：nn.Transformer默认batch在第2维
+        )
+        self.transformer_encoder = nn.TransformerEncoder(encoder_layer, num_layers=1)
+
+        # 3) 最终 MLP 回归头
+        self.mlp = nn.Sequential(
+            nn.Linear(hidden_dim, 64),
+            nn.ReLU(),
+            nn.Linear(64, 1),
+            nn.Sigmoid()
+        )
+
+    def forward(self, temp_feat, ppg_feat, hr_feat):
+        """
+        temp_feat: (batch, temp_dim)
+        ppg_feat:  (batch, ppg_dim)
+        hr_feat:   (batch, hr_dim)
+        """
+        # 投影到同一维度
+        temp_vec = self.temp_proj(temp_feat)  # => (batch, hidden_dim)
+        ppg_vec  = self.ppg_proj(ppg_feat)
+        hr_vec   = self.hr_proj(hr_feat)
+
+        # 堆叠 => (batch, 3, hidden_dim)
+        x = torch.stack([temp_vec, ppg_vec, hr_vec], dim=1)  
+        # 对 nn.Transformer 而言，需要 (seq_len, batch, d_model)
+        x = x.permute(1, 0, 2)  # => (3, batch, hidden_dim)
+
+        # 通过 TransformerEncoder
+        x = self.transformer_encoder(x)  # => (3, batch, hidden_dim)
+
+        # 转回 (batch, 3, hidden_dim)
+        x = x.permute(1, 0, 2)  # => (batch, 3, hidden_dim)
+
+        # 简单做平均池化 (也可做 max pool 或取第一个 token)
+        fused = x.mean(dim=1)  # => (batch, hidden_dim)
+
+        # 进入回归头
+        out = self.mlp(fused)  # => (batch, 1)
+        return out.squeeze()   # => (batch,)
+
+
+
+def main():
+    # ------------------------- 1. 加载数据集 -------------------------
+    temp_data_dir = "data/temp_preprocessed"
+    ppg_data_dir  = "data/ppg_preprocessed"
+    hr_data_dir   = "data/hr_preprocessed"
+    label_path    = "data/labels"
+
+    dataset = MultiModalDataset(temp_data_dir, ppg_data_dir, hr_data_dir, label_path)
+
+    train_size = int(0.7 * len(dataset))  
+    val_size   = int(0.15 * len(dataset)) 
+    test_size  = len(dataset) - train_size - val_size
+
+    train_dataset, val_dataset, test_dataset = random_split(dataset, [train_size, val_size, test_size])
+
+    batch_size = 64
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    val_loader   = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    test_loader  = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
+
+    # ------------------------- 2. 初始化三路Encoder 和 Mid-Fusion模型 -------------------------
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    temp_encoder = TemperatureEncoder(window_size=5).to(device)  # 默认输出 16 维
+    ppg_encoder  = PPGEncoder().to(device)                       # 默认输出 64 维
+    hr_encoder   = HREncoder().to(device)                        # 默认输出 64 维
+
+    # MidFusionRegressor 中要写死每一路输出维度，以对应Encoder的fc输出维度
+    fusion_model = MidFusionRegressor(temp_dim=16, ppg_dim=64, hr_dim=64).to(device)
+
+
+    # fusion_model = nn.Sequential(
+    #     nn.Linear(16 + 64 + 64, 64),
+    #     nn.ReLU(),
+    #     nn.Linear(64, 1),
+    #     nn.Sigmoid()
+    # ).to(device)
+
+    # ------------------------- 3. 优化器、损失函数等 -------------------------
+    criterion = nn.MSELoss()
+    optimizer = optim.Adam(
+        list(temp_encoder.parameters()) +
+        list(ppg_encoder.parameters())  +
+        list(hr_encoder.parameters())   +
+        list(fusion_model.parameters()),
+        lr=0.0005
+    )
+
+    epochs = 300
+    best_val_loss = float('inf')
+    patience = 25
+    no_improve_count = 0
+
+    train_losses, val_losses = [], []
+
+    # ------------------------- 4. 训练循环 -------------------------
+    for epoch in range(epochs):
+        temp_encoder.train()
+        ppg_encoder.train()
+        hr_encoder.train()
+        fusion_model.train()
+        
+        train_loss = 0.0
+        for temp_data, ppg_data, hr_data, labels in train_loader:
+            temp_data, ppg_data, hr_data, labels = temp_data.to(device), ppg_data.to(device), hr_data.to(device), labels.to(device)
+
+            optimizer.zero_grad()
+            temp_feat = temp_encoder(temp_data)
+            ppg_feat  = ppg_encoder(ppg_data)
+            hr_feat   = hr_encoder(hr_data)
+
+            preds = fusion_model(temp_feat, ppg_feat, hr_feat)
+            loss = criterion(preds, labels)
+            loss.backward()
+            optimizer.step()
+            train_loss += loss.item()
+
+        train_loss /= len(train_loader)
+        train_losses.append(train_loss)
+
+        # ---------- 验证 ----------
+        temp_encoder.eval()
+        ppg_encoder.eval()
+        hr_encoder.eval()
+        fusion_model.eval()
+        
+        val_loss = 0.0
+        with torch.no_grad():
+            for temp_data, ppg_data, hr_data, labels in val_loader:
+                temp_data, ppg_data, hr_data, labels = temp_data.to(device), ppg_data.to(device), hr_data.to(device), labels.to(device)
+                temp_feat = temp_encoder(temp_data)
+                ppg_feat  = ppg_encoder(ppg_data)
+                hr_feat   = hr_encoder(hr_data)
+                preds     = fusion_model(temp_feat, ppg_feat, hr_feat)
+
+                loss = criterion(preds, labels)
+                val_loss += loss.item()
+
+        val_loss /= len(val_loader)
+        val_losses.append(val_loss)
+
+        # Early Stopping逻辑
+        if val_loss < best_val_loss:
+            print(f"[Epoch {epoch+1}] Saving best model, val_loss = {val_loss:.4f}")
+            best_val_loss = val_loss
+            no_improve_count = 0
+            torch.save(temp_encoder.state_dict(), "weights/best_temp_encoder_mid.pth")
+            torch.save(ppg_encoder.state_dict(),  "weights/best_ppg_encoder_mid.pth")
+            torch.save(hr_encoder.state_dict(),   "weights/best_hr_encoder_mid.pth")
+            torch.save(fusion_model.state_dict(), "weights/best_fusion_mid.pth")
+        else:
+            no_improve_count += 1
+            if no_improve_count >= patience:
+                print(f"Val loss has not improved for {patience} epochs. Early stopping.")
+                break
+
+        print(f"Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}, no_improve_count: {no_improve_count}")
+
+    print("\nTraining complete or early stopped.")
+
+    # ------------------------- 5. 测试阶段：加载最佳模型 -------------------------
+    print("Testing with best saved model ...")
+    temp_encoder.load_state_dict(torch.load("weights/best_temp_encoder_mid.pth"))
+    ppg_encoder.load_state_dict(torch.load("weights/best_ppg_encoder_mid.pth"))
+    hr_encoder.load_state_dict(torch.load("weights/best_hr_encoder_mid.pth"))
+    fusion_model.load_state_dict(torch.load("weights/best_fusion_mid.pth"))
+
+    temp_encoder.eval()
+    ppg_encoder.eval()
+    hr_encoder.eval()
+    fusion_model.eval()
+
+    test_loss = 0.0
+    all_labels = []
+    all_preds  = []
+
+    with torch.no_grad():
+        for temp_data, ppg_data, hr_data, labels in test_loader:
+            temp_data, ppg_data, hr_data, labels = temp_data.to(device), ppg_data.to(device), hr_data.to(device), labels.to(device)
+            temp_feat = temp_encoder(temp_data)
+            ppg_feat  = ppg_encoder(ppg_data)
+            hr_feat   = hr_encoder(hr_data)
+            preds     = fusion_model(temp_feat, ppg_feat, hr_feat)
+
+            all_labels.append(labels.cpu().numpy())
+            all_preds.append(preds.cpu().numpy())
+
+            loss = criterion(preds, labels)
+            test_loss += loss.item()
+
+    test_loss /= len(test_loader)
+    all_labels = np.concatenate(all_labels)
+    all_preds  = np.concatenate(all_preds)
+
+    # 评估指标
+    mse = mean_squared_error(all_labels, all_preds)
+    rmse= np.sqrt(mse)
+    mae = mean_absolute_error(all_labels, all_preds)
+    r2  = r2_score(all_labels, all_preds)
+    errors = all_preds - all_labels
+
+    conf_int = stats.norm.interval(0.95, loc=np.mean(errors), scale=np.std(errors))
+    worst_idx = np.argsort(np.abs(errors))[-10:]  # 最差10个样本
+
+    print(f"\n==== Test Results ====")
+    print(f"Test MSE:   {test_loss:.4f}")
+    print(f"RMSE:       {rmse:.4f}")
+    print(f"MAE:        {mae:.4f}")
+    print(f"R² Score:   {r2:.4f}")
+    print(f"95% CI:     {conf_int}")
+
+    print("\nWorst predictions:")
+    for i in worst_idx:
+        print(f"True: {all_labels[i]:.4f}, Pred: {all_preds[i]:.4f}, Error: {errors[i]:.4f}")
+
+    # 可选: 画散点图 / 误差分布 等
+
+if __name__ == "__main__":
+    main()
