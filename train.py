@@ -52,7 +52,7 @@ class LateFusionModel(nn.Module):
 # Instantiate your pre-trained encoders.
 ppg_encoder = PPGEncoder(input_dim=2, num_layers=1, cnn_channels=64, lstm_hidden_dim=64)
 hr_encoder = HREncoder(input_dim=2, num_layers=1, cnn_channels=64, lstm_hidden_dim=64)
-thermal_encoder = TemperatureEncoder(input_dim=3, hidden_dim=16, num_layers=2, window_size=5)
+thermal_encoder = TemperatureEncoder(input_dim=6, hidden_dim=16, num_layers=2, window_size=5)
 
 # Load your pre-trained weights:
 ppg_encoder.load_state_dict(torch.load("weights/best_ppg_encoder.pth", map_location=torch.device("cpu")))
@@ -143,57 +143,57 @@ best_val_loss = float("inf")
 train_losses = []
 val_losses = []
 
-for epoch in range(num_epochs):
-    model.train()
-    running_loss = 0.0
-    for temp, ppg, hr, label in train_loader:
-        # Move data to device.
-        temp, ppg, hr, label = temp.to(device), ppg.to(device), hr.to(device), label.to(device)
+# for epoch in range(num_epochs):
+#     model.train()
+#     running_loss = 0.0
+#     for temp, ppg, hr, label in train_loader:
+#         # Move data to device.
+#         temp, ppg, hr, label = temp.to(device), ppg.to(device), hr.to(device), label.to(device)
         
-        optimizer.zero_grad()
-        # Assuming your model forward signature is: model(ppg_data, temp_data, hr_data)
-        # (Make sure the order matches your model definition.)
-        predictions = model(ppg, temp, hr)
-        loss = criterion(predictions, label.unsqueeze(1))  # Make sure label shape is (batch_size, 1)
-        loss.backward()
-        optimizer.step()
-        running_loss += loss.item() * temp.size(0)
+#         optimizer.zero_grad()
+#         # Assuming your model forward signature is: model(ppg_data, temp_data, hr_data)
+#         # (Make sure the order matches your model definition.)
+#         predictions = model(ppg, temp, hr)
+#         loss = criterion(predictions, label.unsqueeze(1))  # Make sure label shape is (batch_size, 1)
+#         loss.backward()
+#         optimizer.step()
+#         running_loss += loss.item() * temp.size(0)
     
-    epoch_loss = running_loss / len(train_loader.dataset)
-    train_losses.append(epoch_loss)
+#     epoch_loss = running_loss / len(train_loader.dataset)
+#     train_losses.append(epoch_loss)
     
-    # Validation loop.
-    model.eval()
-    val_running_loss = 0.0
-    with torch.no_grad():
-        for temp, ppg, hr, label in val_loader:
-            temp, ppg, hr, label = temp.to(device), ppg.to(device), hr.to(device), label.to(device)
-            predictions = model(ppg, temp, hr)
-            loss = criterion(predictions, label.unsqueeze(1))
-            val_running_loss += loss.item() * temp.size(0)
+#     # Validation loop.
+#     model.eval()
+#     val_running_loss = 0.0
+#     with torch.no_grad():
+#         for temp, ppg, hr, label in val_loader:
+#             temp, ppg, hr, label = temp.to(device), ppg.to(device), hr.to(device), label.to(device)
+#             predictions = model(ppg, temp, hr)
+#             loss = criterion(predictions, label.unsqueeze(1))
+#             val_running_loss += loss.item() * temp.size(0)
     
-    val_loss = val_running_loss / len(val_loader.dataset)
-    val_losses.append(val_loss)
+#     val_loss = val_running_loss / len(val_loader.dataset)
+#     val_losses.append(val_loss)
     
-    if val_loss < best_val_loss:
-        best_val_loss = val_loss
-        # Save the best model weights.
-        torch.save(model.state_dict(), "weights/late_fusion_model_best.pth")
+#     if val_loss < best_val_loss:
+#         best_val_loss = val_loss
+#         # Save the best model weights.
+#         torch.save(model.state_dict(), "weights/late_fusion_model_best.pth")
     
-    print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
+#     print(f"Epoch {epoch+1}/{num_epochs}, Train Loss: {epoch_loss:.4f}, Val Loss: {val_loss:.4f}")
 
-print("Training complete!")
-# Analysis on training.
-epochs = range(1, num_epochs + 1)
+# print("Training complete!")
+# # Analysis on training.
+# epochs = range(1, num_epochs + 1)
 
-plt.figure(figsize=(8,5))
-plt.plot(epochs, train_losses, label='Train Loss')
-plt.plot(epochs, val_losses, label='Val Loss')
-plt.title('Training and Validation Loss Over Epochs')
-plt.xlabel('Epoch')
-plt.ylabel('MSE Loss')
-plt.legend()
-plt.show()
+# plt.figure(figsize=(8,5))
+# plt.plot(epochs, train_losses, label='Train Loss')
+# plt.plot(epochs, val_losses, label='Val Loss')
+# plt.title('Training and Validation Loss Over Epochs')
+# plt.xlabel('Epoch')
+# plt.ylabel('MSE Loss')
+# plt.legend()
+# plt.show()
 
 # Testing loop.
 model.load_state_dict(torch.load("weights/late_fusion_model_best.pth"))

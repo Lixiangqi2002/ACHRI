@@ -127,7 +127,24 @@ class MultiModalDataset(Dataset):
         temp_end = temp_start + 6
         temp_slice = np.hstack((temp_data["min"][temp_start:temp_end],  
                                 temp_data["max"][temp_start:temp_end], 
-                                temp_data["avg"][temp_start:temp_end]))  # (6, 3)
+                                temp_data["avg"][temp_start:temp_end]
+                                ))  # (6, 3)
+        if temp_start == 0:
+            temp_diff = np.zeros((6, 3))   
+        else:
+            prev_temp_start = (time_idx - 1) * 6
+            prev_temp_end = prev_temp_start + 6
+
+            prev_temp = np.hstack((
+                temp_data["min"][prev_temp_start:prev_temp_end],
+                temp_data["max"][prev_temp_start:prev_temp_end],
+                temp_data["avg"][prev_temp_start:prev_temp_end]
+            ))  # (6, 3)
+
+            temp_diff = temp_slice - prev_temp 
+
+        temp_slice = np.hstack((temp_slice, temp_diff)) # (6, 6)
+        
 
         # get 1 second of PPG data (250, 2)
         ppg_start = time_idx * 250
@@ -145,7 +162,7 @@ class MultiModalDataset(Dataset):
         label_value = self.person_label_data[person_name]["arousal"][time_idx]#/10  # (1,), normalized to (0,1)
 
         return (
-            torch.tensor(temp_slice, dtype=torch.float32),  # (6, 3)
+            torch.tensor(temp_slice, dtype=torch.float32),  # (6, 6)
             torch.tensor(ppg_slice, dtype=torch.float32),  # (250, 2)
             torch.tensor(hr_slice, dtype=torch.float32),  # (50, 2)
             torch.tensor(label_value, dtype=torch.float32),  # (1,)
@@ -161,7 +178,7 @@ if __name__ == "__main__":
     dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
 
     for temp, ppg, hr, label in dataloader:
-        print(f"Nose Temperature : {temp.shape}")  # (batch_size, 6, 3)
+        print(f"Nose Temperature : {temp.shape}")  # (batch_size, 6, 6)
         print(temp)
         print(f"PPG Data: {ppg.shape}")  # (batch_size, 250, 2)
         print(ppg)

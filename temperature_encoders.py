@@ -9,13 +9,13 @@ import scipy.stats as stats
 import matplotlib.pyplot as plt
 
 class TemperatureEncoder(nn.Module):
-    def __init__(self, input_dim=3, hidden_dim=16, num_layers=2, window_size=5):
+    def __init__(self, input_dim=6, hidden_dim=16, num_layers=2, window_size=5):
         super(TemperatureEncoder, self).__init__()
         self.window_size = window_size  # Sliding window size (seconds)
 
         # LSTM to process temperature sequence
         self.lstm = nn.LSTM(
-            input_size=input_dim,  # Temperature data is 3-dimensional (min, max, avg)
+            input_size=input_dim,  # Temperature data is 6-dimensional (min, max, avg, diff_min, diff_max, diff_avg)
             hidden_size=hidden_dim,
             num_layers=num_layers,  # Two-layer LSTM
             batch_first=True
