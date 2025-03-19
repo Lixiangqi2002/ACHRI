@@ -133,6 +133,10 @@ if __name__=="__main__":
         train_loss /= len(train_loader)
         train_losses.append(train_loss)  # Store training loss
 
+        ##################################################
+        # validation
+        ##################################################
+        
         encoder.eval()
         regressor.eval()
         val_loss = 0
