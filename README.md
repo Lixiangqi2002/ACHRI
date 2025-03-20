@@ -17,26 +17,26 @@ The final score is computed using a weighted formula to give an objective measur
 ## Model
 
 ### Mid Level Fusion
-"""
+```
 Test Loss: 0.0071
 Test MSE:   0.0071
 Test RMSE:  0.0841
 Test MAE:   0.0571
 Test R^2:   0.8206
-"""
+```
 
 ### Late Level Fusion
-"""
+```
 Test Loss: 0.0094
 Test MSE:   0.0094
 Test RMSE:  0.0967
 Test MAE:   0.0685
 Test R^2:   0.7569
-"""
+```
 
 ### Early Level Fusion
 Without PCA
-"""
+```
 SVM Results:
 Train Loss (MSE): 0.0265
 Test Loss (MSE): 0.0248
@@ -44,10 +44,10 @@ RMSE: 0.1574
 MAE: 0.1221
 R² Score: 0.3333
 95% Confidence Interval for Error: (np.float64(-0.3135153544494832), np.float64(0.30318525426938037))
-"""
+```
 
 With PCA
-"""
+```
 SVM Results:
 Train Loss (MSE): 0.0111
 Test Loss (MSE): 0.0132
@@ -55,7 +55,7 @@ RMSE: 0.1148
 MAE: 0.0851
 R² Score: 0.6453
 95% Confidence Interval for Error: (np.float64(-0.21820402425365654), np.float64(0.2311350794491045))
-"""
+```
 
 ## Pre-trained Encoders
 
@@ -77,11 +77,10 @@ True: 0.7059, Predicted: 0.3069, Error: -0.3990
 True: 0.7333, Predicted: 0.3262, Error: -0.4071
 True: 0.9000, Predicted: 0.4562, Error: -0.4438
 True: 0.9667, Predicted: 0.4881, Error: -0.4785
-True: 0.1667, Predicted: 0.7209, Error: 0.5543
-"""
+```
 
 #### PPG：
-"""
+```
 Test Loss (MSE): 0.0154
 RMSE: 0.1250
 MAE: 0.0887
@@ -99,10 +98,10 @@ True: 0.8627, Predicted: 0.3029, Error: -0.5599
 True: 0.0000, Predicted: 0.5636, Error: 0.5636
 True: 1.0000, Predicted: 0.3996, Error: -0.6004
 True: 1.0000, Predicted: 0.3791, Error: -0.6209
-"""
+```
 
 #### Temperature:
-"""
+```
 Test Loss (MSE): 0.0137
 RMSE: 0.1170
 MAE: 0.0829
@@ -120,4 +119,4 @@ True: 0.2000, Predicted: 0.6929, Error: 0.4929
 True: 0.9000, Predicted: 0.3665, Error: -0.5335
 True: 0.2000, Predicted: 0.7395, Error: 0.5395
 True: 1.0000, Predicted: 0.3693, Error: -0.6307
-"""
+```
