@@ -158,6 +158,17 @@ if __name__=="__main__":
         scheduler.step(val_loss)
     print("Complete training!")
 
+    # Plot training and validation loss
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label="Train Loss", marker="o")
+    plt.plot(val_losses, label="Validation Loss", marker="s")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title("Training & Validation Loss")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
     ##################################################
     # testing
     ##################################################
@@ -231,13 +242,4 @@ if __name__=="__main__":
     plt.show()
 
 
-    # Plot training and validation loss
-    plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, label="Train Loss", marker="o")
-    plt.plot(val_losses, label="Validation Loss", marker="s")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.title("Training & Validation Loss")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    
