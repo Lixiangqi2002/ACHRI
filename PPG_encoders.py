@@ -30,6 +30,9 @@ class PPGEncoder(nn.Module):
         # Fully connected layer: map to 64 dimensions
         self.fc = nn.Linear(lstm_hidden_dim, 64)
 
+        # dropout layer
+        self.dropout = nn.Dropout(0.1) 
+
     def forward(self, x):
         """
         x: (batch_size, sequence_length, input_dim) -> (batch_size, 250, 2)  # PPG data
@@ -42,6 +45,8 @@ class PPGEncoder(nn.Module):
         x = x.permute(0, 2, 1)  # Transform back to (batch_size, new_seq_len, cnn_channels)
         x, _ = self.lstm(x)  # LSTM processes temporal features
         x = x[:, -1, :]  # Take the output of the last time step of LSTM
+        
+        x = self.dropout(x)  # dropout to avoid overfitting
         return self.fc(x)  # (batch_size, 128)
 
 
@@ -97,15 +102,14 @@ if __name__=="__main__":
     encoder = PPGEncoder().to(device)
     regressor = EmotionRegressor().to(device)
 
-
-    ##################################################
-    # training
-    ##################################################
     optimizer = optim.Adam(list(encoder.parameters()) + list(regressor.parameters()), lr=0.0001, weight_decay=1e-5)
     # scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=5)
 
     criterion = nn.MSELoss()
 
+    ##################################################
+    # training
+    ##################################################
     epochs = 300
     scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=epochs, eta_min=1e-6)
     best_val_loss = float("inf")
