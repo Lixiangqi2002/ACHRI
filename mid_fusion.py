@@ -121,6 +121,9 @@ def test(model, test_loader, device):
         for temp, ppg, hr, label in test_loader:
             temp, ppg, hr, label = temp.to(device), ppg.to(device), hr.to(device), label.to(device)
             predictions = model(ppg, temp, hr)
+            # print(ppg.shape) # [B, 250, 2]
+            # print(temp.shape) # [B, 6, 6]
+            # print(hr.shape) # [B, 250, 2]
             loss = criterion(predictions, label.unsqueeze(1))
             test_running_loss += loss.item() * temp.size(0)
             all_preds.append(predictions.cpu().numpy())

@@ -26,9 +26,7 @@ class MultiModalDataset(Dataset):
             file_path = os.path.join(temp_data_dir, file)
             df = pd.read_csv(file_path, header=None).values  
             person_name = file.split("_")[-2]  
-            # if person_name != "byz":
-            #     continue
-            
+
             if person_name not in self.person_temp_data:
                 self.person_temp_data[person_name] = {}
 
@@ -46,9 +44,7 @@ class MultiModalDataset(Dataset):
             df = df.dropna(axis=1, how='all')
 
             person_name = file.split("_")[0]
-            # if person_name != "byz":
-            #     continue
-
+   
             if person_name not in self.person_ppg_data:
                 self.person_ppg_data[person_name] = {}
             
@@ -73,8 +69,6 @@ class MultiModalDataset(Dataset):
             df = pd.read_csv(file_path, header=0, names=["timestamp", "hr", "hrv"])
             df = df.dropna(axis=1, how='all')
             person_name = file.split("_")[0]
-            # if person_name != "byz":
-            #     continue
             if person_name not in self.person_hr_data:
                 self.person_hr_data[person_name] = {}
             
@@ -90,8 +84,6 @@ class MultiModalDataset(Dataset):
 
             person_name = file.split("_")[0]
             print(person_name)
-            # if person_name != "byz":
-            #     continue
             if person_name not in self.person_label_data:
                 self.person_label_data[person_name] = {}
 

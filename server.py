@@ -6,13 +6,12 @@ import numpy as np
 app = Flask(__name__)
 CORS(app)
 
-used_offsets = set()  # 存储已经使用过的偏移值
-current_offset = 1  # 递增模式的起始值
+used_offsets = set()  
+current_offset = 1  
 # model = joblib.load("mlp_level_predictor.pkl")
 
 def get_sensor_data():
-    """模拟传感器数据，这里要替换成真实的读取代码"""
-    heart_rate = random.uniform(60, 100)  # 真实情况下这里要改成实际传感器数据
+    heart_rate = random.uniform(60, 100)  
     skin_conductance = random.uniform(0.1, 1.0)
     eeg_signal = random.uniform(0.1, 0.5)
     stress_level = random.uniform(1, 10)
@@ -22,7 +21,7 @@ def get_sequential_offset():
     """获取递增的偏移值（一个一个加），并确保不重复"""
     global current_offset
     if current_offset > 23:
-        current_offset = 1  # 重新从1开始
+        current_offset = 1 
     offset = current_offset
     current_offset += 1
     return offset
