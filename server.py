@@ -43,7 +43,7 @@ def get_unique_random_offset():
 @app.route('/predict_level_offset', methods=['GET'])
 def predict_level_offset():
     try:
-        mode = request.args.get('mode', 'random')  # 获取模式参数，默认是递增模式
+        mode = request.args.get('mode', 'sequential')  # 获取模式参数，默认是递增模式
         sensor_data = get_sensor_data()
 
         if mode == 'sequential':
