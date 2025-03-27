@@ -50,6 +50,7 @@ def extract_respiratory_rate(signal, fs):
     dominant_freq = freqs[valid][np.argmax(psd[valid])]
     return dominant_freq * 60
 
+# --这里获取HRV--
 def extract_hrv_rmssd(signal_window, fs):
     signals, info = nk.ppg_process(signal_window, sampling_rate=fs)
     if "PPG_Peaks" not in info or len(info["PPG_Peaks"]) < 2:
@@ -100,6 +101,11 @@ def minmax_normalize(values):
     normalized = (values - v_min) / (v_max - v_min)
     return normalized
 
+# --这里获取HR--
+def extract_hr_from_neurokit(window, fs):
+    signals, _ = nk.ppg_process(window, sampling_rate=fs)
+    return np.nanmean(signals["PPG_Rate"])
+
 #############################
 # Subject Processing Function
 #############################
@@ -146,10 +152,6 @@ def process_subject(baseline_folder, experiment_folder, output_csv_path, fs=250,
     # --- Sliding Window Analysis Without Time Stretching ---
     ws_short = window_size_sec_short
     ss_short = step_size_sec_short
-    
-    def extract_hr_from_neurokit(window, fs):
-        signals, _ = nk.ppg_process(window, sampling_rate=fs)
-        return np.nanmean(signals["PPG_Rate"])
     
     hr_times_left, hr_estimates_left = sliding_window_analysis(exp_left_corrected, fs, ws_short, ss_short, extract_hr_from_neurokit)
     hr_times_right, hr_estimates_right = sliding_window_analysis(exp_right_corrected, fs, ws_short, ss_short, extract_hr_from_neurokit)

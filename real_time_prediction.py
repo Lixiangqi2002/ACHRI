@@ -8,7 +8,7 @@ from numpy import random
 import numpy as np
 import requests
 
-from sensor_data_interface import get_thermal_data, get_ppg_data, get_hr_data
+from sensor_data_interface import get_thermal_data, get_ppg_data, get_hr_data, update_ppg_buffer
 import time
 
 def load_model(device):
@@ -77,6 +77,8 @@ def real_time_sensor():
     # hr_data = np.random.rand(50, 2).astype(np.float32)  # [hr, hrv]
 
     ppg_data = get_ppg_data()
+    update_ppg_buffer(ppg_data) # 更新缓冲区
+
     thermal_data = get_thermal_data()
     hr_data = get_hr_data()
 
