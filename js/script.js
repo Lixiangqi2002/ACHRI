@@ -741,12 +741,25 @@ var LEVELS = [
 			
 			var arrows = trackKeys(arrowCodes);
 			
+			const baselineTimes = [12, 32, 41, 55, 76, 60, 94, 108, 150, 120];
 			
 			function runLevel(level, Display, andThen) {
 				var display = new Display(document.body, level);
+				const startTime = Date.now();
+				const baseline = baselineTimes[currentLevel] || 10;
+		
 				runAnimation(function (step) {
 					level.animate(step, arrows);
 					display.drawFrame(step);
+			
+					const elapsed = (Date.now() - startTime) / 1000; 
+					if (elapsed > baseline * 3) {
+						alert(`You're stuck! (${elapsed.toFixed(1)}s used)\nSkipping to another level...`);
+						display.clear();
+						if (andThen) andThen("hard_quit");
+						return false;
+					}
+			
 					if (level.isFinished()) {
 						display.clear();
 						if (andThen) andThen(level.status);
@@ -754,7 +767,22 @@ var LEVELS = [
 					}
 				});
 			}
+			async function getLatestPrediction() {
+				try {
+					let response = await fetch("http://localhost:5000/predict_level_offset");
+					let data = await response.json();
 			
+					if (data.prediction !== null && data.prediction !== undefined) {
+						document.getElementById("prediction-display").innerText = `${data.prediction.toFixed(4)}`;
+					} else {
+						document.getElementById("prediction-display").innerText = "No prediction yet";
+					}
+				} catch (error) {
+					console.error("Error getting prediction:", error);
+					document.getElementById("prediction-display").innerText = "Error fetching prediction";
+				}
+			}
+
 			let currentLevel = 0; 
 			let playedLevels = -1;
 			const maxLevels = 1000;
@@ -763,8 +791,11 @@ var LEVELS = [
 					let response = await fetch("http://localhost:5000/predict_level_offset");
 					let data = await response.json();
 					console.log("=== JavaScript Debug ===");
-				console.log("Predicted Level Offset:", data.next_level_offset);
-				console.log("========================");
+					console.log("Predicted Affective State: ", data.prediction);
+					console.log("Predicted Level Offset:", data.next_level_offset);
+					console.log("========================");
+					
+					document.getElementById("prediction-display").innerText = `${data.prediction}`;
 
 					return data.next_level_offset;
 				} catch (error) {
@@ -772,7 +803,6 @@ var LEVELS = [
 					return 0; 
 				}
 			}
-			
 			function runGame(plans, Display) {
 				function startLevel(n) {
 
@@ -789,7 +819,6 @@ var LEVELS = [
 					currentLevel = n;
 					playedLevels++; 
 					document.getElementById("level-display").innerText = `Level: ${currentLevel + 1} | Played: ${playedLevels} times`;
-
 					runLevel(new Level(plans[n]), Display, async function (status) {
 						if (status == "lost") {
 							startLevel(n); 
@@ -800,7 +829,7 @@ var LEVELS = [
 							}
 
 							let offset = await getPredictedLevelOffset();
-							let nextLevel = offset;
+							let nextLevel = offset + currentLevel;
 
 							if (nextLevel >= 0 && nextLevel < plans.length) {
 								startLevel(nextLevel);
@@ -815,3 +844,4 @@ var LEVELS = [
 			
 			
 			runGame(LEVELS, DOMDisplay);
+			setInterval(getLatestPrediction, 500);
