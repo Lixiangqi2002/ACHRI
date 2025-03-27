@@ -73,7 +73,7 @@ if __name__=="__main__":
 
 
     dataset = MultiModalDataset(temp_data_dir, ppg_data_dir,hr_data_dir, label_path)
-
+    print(len(dataset))
     train_size = int(0.7 * len(dataset))  # 70%
     val_size = int(0.15 * len(dataset))   # 15%
     test_size = len(dataset) - train_size - val_size  # 15%
@@ -98,7 +98,8 @@ if __name__=="__main__":
         print(label)
         break
     
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    print('Using device:', device)
     encoder = PPGEncoder().to(device)
     regressor = EmotionRegressor().to(device)
 
@@ -164,6 +165,17 @@ if __name__=="__main__":
         print(f"Epoch {epoch+1}/{epochs}, Train Loss: {train_loss:.4f}, Val Loss: {val_loss:.4f}")
         scheduler.step(val_loss)
     print("Complete training!")
+
+    # Plot training and validation loss
+    plt.figure(figsize=(10, 5))
+    plt.plot(train_losses, label="Train Loss", marker="o")
+    plt.plot(val_losses, label="Validation Loss", marker="s")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.title("Training & Validation Loss")
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
     ##################################################
     # testing
@@ -238,13 +250,4 @@ if __name__=="__main__":
     plt.show()
 
 
-    # Plot training and validation loss
-    plt.figure(figsize=(10, 5))
-    plt.plot(train_losses, label="Train Loss", marker="o")
-    plt.plot(val_losses, label="Validation Loss", marker="s")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.title("Training & Validation Loss")
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    
