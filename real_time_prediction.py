@@ -8,18 +8,21 @@ from numpy import random
 import numpy as np
 import requests
 
+from sensor_data_interface import get_thermal_data, get_ppg_data, get_hr_data
+import time
+
 def load_model(device):
     ppg_encoder = PPGEncoder(input_dim=2, num_layers=1, cnn_channels=64, lstm_hidden_dim=64)
     hr_encoder = HREncoder(input_dim=2, num_layers=1, cnn_channels=64, lstm_hidden_dim=64)
     thermal_encoder = TemperatureEncoder(input_dim=6, hidden_dim=16, num_layers=2, window_size=5)
 
-    ppg_encoder.load_state_dict(torch.load("weights/best_ppg_encoder.pth", map_location=device, weights_only=True))
-    hr_encoder.load_state_dict(torch.load("weights/best_hr_encoder.pth", map_location=device, weights_only=True))
-    thermal_encoder.load_state_dict(torch.load("weights/best_temperature_encoder.pth", map_location=device, weights_only=True))
+    ppg_encoder.load_state_dict(torch.load("weights/best_ppg_encoder.pth", map_location=device))
+    hr_encoder.load_state_dict(torch.load("weights/best_hr_encoder.pth", map_location=device))
+    thermal_encoder.load_state_dict(torch.load("weights/best_temperature_encoder.pth", map_location=device))
     fusion_module = FusionModule(ppg_feat_dim=64, thermal_feat_dim=16, hr_feat_dim=64, fused_dim=144)
     model = MidFusionModel(ppg_encoder, hr_encoder, thermal_encoder, fusion_module)
     model.to(device)
-    model.load_state_dict(torch.load("weights/mid_fusion_model_best.pth", map_location=device, weights_only=True))
+    model.load_state_dict(torch.load("weights/mid_fusion_model_best.pth", map_location=device))
     
     fusion_module = FusionModule(ppg_feat_dim=64, thermal_feat_dim=16, hr_feat_dim=64, fused_dim=144)
     model.to(device)
@@ -69,10 +72,15 @@ def real_time_inference(model, ppg_data, thermal_data, hr_data, device):
 
 
 def real_time_sensor():
-    ppg_data = np.random.rand(250, 2).astype(np.float32)  
-    thermal_data = np.random.rand(6, 6).astype(np.float32)  
-    hr_data = np.random.rand(50, 2).astype(np.float32)    
+    # ppg_data = np.random.rand(250, 2).astype(np.float32)  # [A0, A1]
+    # thermal_data = np.random.rand(6, 6).astype(np.float32)  # [min, max, avg, min_diff, max_diff, avg_diff]
+    # hr_data = np.random.rand(50, 2).astype(np.float32)  # [hr, hrv]
 
+    ppg_data = get_ppg_data()
+    thermal_data = get_thermal_data()
+    hr_data = get_hr_data()
+
+    print(f"PPG Data: {ppg_data.shape}, Thermal Data: {thermal_data.shape}, HR Data: {hr_data.shape}")
     return ppg_data, thermal_data, hr_data
 
 
@@ -84,3 +92,4 @@ if __name__ == "__main__":
         ppg_data, thermal_data, hr_data = real_time_sensor()
         prediction = real_time_inference(model, ppg_data, thermal_data, hr_data, device)
         print("Prediction:", prediction)
+        time.sleep(1) # 模拟1秒钟获取一次数据
