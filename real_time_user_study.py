@@ -19,17 +19,21 @@ def real_time_level_offset():
     if len(all_predictions) == 0:
         return 2  
     
-    ratio_above_threshold = sum(1 for p in all_predictions if p > 0.6) / len(all_predictions)
+    ratio_above_threshold = sum(1 for p in all_predictions if p > 5.5) / len(all_predictions)
     print("Ratio of predictions > 0.6:", ratio_above_threshold)
-    ratio_below_threshold = sum(1 for p in all_predictions if p < 0.4) / len(all_predictions)
+    ratio_below_threshold = sum(1 for p in all_predictions if p < 4.5) / len(all_predictions)
     print("Ratio of predictions < 0.4:", ratio_below_threshold)
 
-    if ratio_above_threshold > ratio_below_threshold:
+    if 1.2 * ratio_above_threshold > ratio_below_threshold:
         print("More predictions above 0.6")
+        offset_level = -2
+    elif ratio_above_threshold > ratio_below_threshold:
         offset_level = -1
+    elif 0.8 * ratio_above_threshold > ratio_below_threshold:
+        offset_level = 1
     else:
         print("More predictions below 0.4")
-        offset_level = 1
+        offset_level = 2
 
     # current_level = last_current_level
     # target_level = last_current_level + offset_level
@@ -98,4 +102,4 @@ def predict_level_offset():
 
 if __name__ == '__main__':
     
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(host='0.0.0.0', port=5050, debug=False)

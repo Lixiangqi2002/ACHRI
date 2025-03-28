@@ -769,7 +769,7 @@ var LEVELS = [
 			}
 			async function getLatestPrediction() {
 				try {
-					let response = await fetch("http://localhost:5000/predict_level_offset");
+					let response = await fetch("http://localhost:5050/predict_level_offset");
 					let data = await response.json();
 			
 					if (data.prediction !== null && data.prediction !== undefined) {
@@ -788,7 +788,7 @@ var LEVELS = [
 			const maxLevels = 1000;
 			async function getPredictedLevelOffset() {
 				try {
-					let response = await fetch("http://localhost:5000/predict_level_offset");
+					let response = await fetch("http://localhost:5050/predict_level_offset");
 					let data = await response.json();
 					console.log("=== JavaScript Debug ===");
 					console.log("Predicted Affective State: ", data.prediction);
@@ -839,7 +839,7 @@ var LEVELS = [
 						}
 					});
 				}
-				startLevel(8);
+				startLevel(3);
 			}
 			
 			

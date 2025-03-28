@@ -29,6 +29,10 @@ def load_model(device):
     model.eval()  
     return model
 
+def mapping(prediction):
+    prediction = prediction * (8.5 - 1.5) + 1.5
+    return prediction
+
 
 def real_time_inference(model, ppg_data, thermal_data, hr_data, device):
     if not torch.is_tensor(ppg_data):
@@ -60,11 +64,16 @@ def real_time_inference(model, ppg_data, thermal_data, hr_data, device):
     with torch.no_grad():
         prediction = model(ppg_data, thermal_data, hr_data)
     prediction_value = prediction.cpu().numpy()
-    prediction_value_post = float(prediction.cpu().numpy().flatten()[0])  
+    prediction_value = prediction_value * (8.5 - 1.5) + 1.5
+
+    prediction_value_post = float(prediction_value.flatten()[0])  
+    with open("predicted_scores.txt", "a") as f:
+        f.write(f"{prediction_value_post:.4f}\n")
+
     
-    print(f"Predicted Emotion Score: {prediction_value_post:.4f}")
+    print(f"Predicted Emotion Score: {prediction_value_post}")
     try:
-        response = requests.post("http://localhost:5000/predict_level_offset", json={"prediction": prediction_value_post})
+        response = requests.post("http://localhost:5050/predict_level_offset", json={"prediction": prediction_value_post})
         print("Sent prediction to server:", response.json())
     except Exception as e:
         print("Error sending prediction:", str(e))
@@ -79,7 +88,9 @@ def real_time_sensor():
     ppg_data = get_ppg_data()
     update_ppg_buffer(ppg_data) # 更新缓冲区
 
-    thermal_data = get_thermal_data()
+    # Read thermal data from csv
+
+    thermal_data = get_thermal_data("01_Ben")
     hr_data = get_hr_data()
 
     print(f"PPG Data: {ppg_data.shape}, Thermal Data: {thermal_data.shape}, HR Data: {hr_data.shape}")
