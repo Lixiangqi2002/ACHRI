@@ -41,7 +41,7 @@ class HREncoder(nn.Module):
         x, _ = self.lstm(x)  # Process time information through LSTM
         x = x[:, -1, :]  # Take the last output of LSTM
 
-        return self.fc(x)  # (batch_size, 128)
+        return self.fc(x)  
 
 
 class EmotionRegressor(nn.Module):

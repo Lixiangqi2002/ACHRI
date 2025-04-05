@@ -1,3 +1,5 @@
+'''Real Time Server for User Study'''
+
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import random

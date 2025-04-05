@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import Dataset, DataLoader, random_split, Subset
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import numpy as np
 import matplotlib.pyplot as plt

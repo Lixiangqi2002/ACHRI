@@ -15,7 +15,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.svm import SVR
-
+from sklearn.model_selection import GridSearchCV
+import xgboost as xgb
 
 class MultiModalDatasetWithFeatureEngineeringNoPCA(Dataset):
     def __init__(self, temp_data_dir, ppg_data_dir, hr_data_dir, label_path):
@@ -392,10 +393,334 @@ class MultiModalDatasetWithFeatureEngineering(Dataset):
             torch.tensor(self.X_pca[idx], dtype=torch.float32),
             torch.tensor(self.y_labels[idx], dtype=torch.float32)
         )
+    
+
+def loso_cv_evaluation_no_pca(dataset_class):
+    temp_data_dir = "data/temp_preprocessed"
+    ppg_data_dir = "data/ppg_preprocessed"
+    hr_data_dir = "data/hr_preprocessed"
+    label_path = "data/labels"
+
+    all_subjects = sorted(set([f.split("_")[0] for f in os.listdir(label_path) if f.endswith(".csv")]))
+
+    all_mse, all_mae, all_r2 = [], [], []
+
+    # ========== Load the full dataset and extract features ==========
+    full_dataset = dataset_class(temp_data_dir, ppg_data_dir, hr_data_dir, label_path)
+    subject_names = list(full_dataset.person_label_data.keys())
+
+    X_all = []
+    y_all = []
+    subject_ids = []
+
+    for idx in range(len(full_dataset)):
+        x, y = full_dataset[idx]
+        X_all.append(x.numpy())
+        y_all.append(y.item())
+        subj_idx = idx // 900
+        subject_ids.append(subject_names[subj_idx])
+
+    X_all = np.array(X_all)
+    y_all = np.array(y_all)
+    subject_ids = np.array(subject_ids)
+    y_all_original = y_all.copy() 
+
+    # ========== Standardize Data ==========
+    # Standardization is performed for each subject here
+    # to avoid information leakage
+    X_normalized = np.zeros_like(X_all)
+    y_normalized = np.zeros_like(y_all)
+
+    for subj in np.unique(subject_ids):
+        subj_mask = subject_ids == subj
+
+        X_subj = X_all[subj_mask]
+        y_subj = y_all[subj_mask]
+
+        X_subj = (X_subj - X_subj.mean(axis=0)) / X_subj.std(axis=0)  # Z-score
+        y_subj = (y_subj - y_subj.mean()) / y_subj.std()              # Z-score label
+
+        X_normalized[subj_mask] = X_subj
+        y_normalized[subj_mask] = y_subj
+
+    X_all = X_normalized
+    y_all = y_normalized
+
+    # ========== Main Loop for LOSO Evaluation ==========
+    for test_subject in all_subjects:
+        print(f"\nLOSO Fold: Test Subject = {test_subject}")
+
+        train_mask = subject_ids != test_subject
+        test_mask = subject_ids == test_subject
+
+        X_train_raw = X_all[train_mask]
+        X_test_raw = X_all[test_mask]
+        y_train = y_all[train_mask]
+        y_test = y_all[test_mask]
+        
+        # ==== Train SVR Model ====
+        # model = SVR(kernel="rbf", C=1, epsilon=0.1)
+        model = xgb.XGBRegressor(n_estimators=300, learning_rate=0.05, max_depth=6)
+
+        # GRID SEARCH FOR HYPERPARAMETER TUNING
+        # param_grid = {
+        #     'C': [0.1, 1, 10],
+        #     'epsilon': [0.01, 0.1, 0.2, 0.5],
+        #     'kernel': ['linear', 'rbf']
+        # }
+        # grid_search = GridSearchCV(SVR(), param_grid, cv=5, scoring='neg_mean_squared_error')
+        # grid_search.fit(X_train_scaled, y_train)
+        # best_params = grid_search.best_params_
+        # print(f"Best parameters: {best_params}")
+        # model = SVR(kernel="rbf", C=best_params['C'], epsilon=best_params['epsilon'])
+        model.fit(X_train_raw, y_train)
+        y_pred = model.predict(X_test_raw)
+        # de-normalize
+        y_mean = y_all_original[test_mask].mean()
+        y_std = y_all_original[test_mask].std()
+        y_pred = y_pred * y_std + y_mean
+        y_test = y_test * y_std + y_mean
+        # print(f"  Predicted: {y_pred}, True : {y_test}")
+        mse = mean_squared_error(y_test, y_pred)
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+
+        print(f"  MSE: {mse:.4f}, MAE: {mae:.4f}, R²: {r2:.4f}")
+        all_mse.append(mse)
+        all_mae.append(mae)
+        all_r2.append(r2)
+
+        plt.figure(figsize=(10, 4))
+        plt.plot(y_test, label='True', marker='o')
+        plt.plot(y_pred, label='Predicted', marker='x')
+        plt.title(f"LOSO Prediction: Subject {test_subject}, mean = {y_mean:.2f}, std = {y_std:.2f}")
+        plt.xlabel("Sample Index")
+        plt.ylabel("Label Value")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(f"figures/early_no_pca_loso_plot_{test_subject}.png")  
+        plt.show()
+
+    # ========== Overall Results Visualization ==========
+    print("\nLOSO Final Results:")
+    print(f"Average MSE: {np.mean(all_mse):.4f}")
+    print(f"Average MAE: {np.mean(all_mae):.4f}")
+    print(f"Average R²:  {np.mean(all_r2):.4f}")
+
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 3, 1)
+    plt.bar(all_subjects, all_mse, color='skyblue')
+    plt.xticks(rotation=45)
+    plt.ylabel("MSE")
+    plt.title("LOSO - MSE per Subject")
+
+    plt.subplot(1, 3, 2)
+    plt.bar(all_subjects, all_mae, color='orange')
+    plt.xticks(rotation=45)
+    plt.ylabel("MAE")
+    plt.title("LOSO - MAE per Subject")
+
+    plt.subplot(1, 3, 3)
+    plt.bar(all_subjects, all_r2, color='green')
+    plt.xticks(rotation=45)
+    plt.ylabel("R²")
+    plt.title("LOSO - R² per Subject")
+
+    plt.tight_layout()
+    plt.savefig("figures/early_no_pca_loso_results.png")
+    plt.show()
 
 
+def loso_cv_evaluation_with_pca(dataset_class, pca_components=0.95):
+    temp_data_dir = "data/temp_preprocessed"
+    ppg_data_dir = "data/ppg_preprocessed"
+    hr_data_dir = "data/hr_preprocessed"
+    label_path = "data/labels"
 
-def train(dataloader, model_type="SVM", plot_loss_curve=True):
+    all_subjects = sorted(set([f.split("_")[0] for f in os.listdir(label_path) if f.endswith(".csv")]))
+
+    all_mse, all_mae, all_r2 = [], [], []
+
+    # ========== Load the full dataset and extract features ==========
+    full_dataset = dataset_class(temp_data_dir, ppg_data_dir, hr_data_dir, label_path)
+    subject_names = list(full_dataset.person_label_data.keys())
+
+    X_all = []
+    y_all = []
+    subject_ids = []
+
+    for idx in range(len(full_dataset)):
+        x, y = full_dataset[idx]
+        X_all.append(x.numpy())
+        y_all.append(y.item())
+        subj_idx = idx // 900
+        subject_ids.append(subject_names[subj_idx])
+
+    X_all = np.array(X_all)
+    y_all = np.array(y_all)
+    subject_ids = np.array(subject_ids)
+    y_all_original = y_all.copy() 
+
+    # ========== Standardize Data ==========
+    # The standardization here is performed for each subject
+    # to avoid information leakage
+    X_normalized = np.zeros_like(X_all)
+    y_normalized = np.zeros_like(y_all)
+
+    for subj in np.unique(subject_ids):
+        subj_mask = subject_ids == subj
+
+        X_subj = X_all[subj_mask]
+        y_subj = y_all[subj_mask]
+
+        X_subj = (X_subj - X_subj.mean(axis=0)) / X_subj.std(axis=0)  # Z-score
+        y_subj = (y_subj - y_subj.mean()) / y_subj.std()              # Z-score label
+
+        X_normalized[subj_mask] = X_subj
+        y_normalized[subj_mask] = y_subj
+
+    X_all = X_normalized
+    y_all = y_normalized
+    
+    print("\n[PCA Analysis on Full Dataset]")
+
+    scaler_all = StandardScaler()
+    X_scaled_all = scaler_all.fit_transform(X_all)
+
+    pca_all = PCA(n_components=pca_components)
+    X_pca_all = pca_all.fit_transform(X_scaled_all)
+
+    print(f"Original feature dimensions: {X_all.shape[1]}")
+    print(f"PCA reduced dimensions: {X_pca_all.shape[1]}")
+    print(f"Explained variance ratio: {pca_all.explained_variance_ratio_}")
+    print(f"Cumulative variance explained: {np.cumsum(pca_all.explained_variance_ratio_)}")
+
+    feature_names = [f"Feature {i+1}" for i in range(X_all.shape[1])]
+    pca_components_df = pd.DataFrame(pca_all.components_, columns=feature_names)
+    print("\nPCA Component Loadings:")
+    print(pca_components_df)
+
+    top_features_per_component = pca_components_df.apply(lambda x: x.abs().idxmax(), axis=1)
+    print("\nTop feature per principal component:")
+    print(top_features_per_component)
+
+    # ==== Cumulative Explained Variance ====
+    plt.figure(figsize=(8, 5))
+    plt.plot(np.cumsum(pca_all.explained_variance_ratio_), marker='o', linestyle='--')
+    plt.xlabel("Number of Principal Components")
+    plt.ylabel("Cumulative Explained Variance")
+    plt.title("PCA Explained Variance")
+    plt.grid()
+    plt.show()
+
+    # ==== PCA Heatmap ====
+    plt.figure(figsize=(12, 6))
+    sns.heatmap(pca_components_df, cmap="coolwarm", center=0)
+    plt.xlabel("Original Features")
+    plt.ylabel("Principal Components")
+    plt.title("PCA Component Loadings Heatmap")
+    plt.tight_layout()
+    plt.show()
+
+    # ========== LOSO Evaluation ==========
+    for test_subject in all_subjects:
+        print(f"\nLOSO Fold: Test Subject = {test_subject}")
+
+        train_mask = subject_ids != test_subject
+        test_mask = subject_ids == test_subject
+
+        X_train_raw = X_all[train_mask]
+        X_test_raw = X_all[test_mask]
+        y_train = y_all[train_mask]
+        y_test = y_all[test_mask]
+
+        # ==== Standardize + PCA  ====
+        scaler = StandardScaler()
+        X_train_scaled = scaler.fit_transform(X_train_raw)
+        X_test_scaled = scaler.transform(X_test_raw)
+
+        pca = PCA(n_components=pca_components)
+        X_train_pca = pca.fit_transform(X_train_scaled)
+        X_test_pca = pca.transform(X_test_scaled)
+
+        # ==== train ====
+        # model = xgb.XGBRegressor(n_estimators=300, learning_rate=0.05, max_depth=6)
+        model = SVR(kernel="rbf", C=1, epsilon=0.1)
+        # GRID SEARCH FOR HYPERPARAMETER TUNING
+        # param_grid = {
+        #     'C': [0.1, 1, 10],
+        #     'epsilon': [0.01, 0.1, 0.2, 0.5],
+        #     'kernel': ['linear', 'rbf']
+        # }
+        # grid_search = GridSearchCV(SVR(), param_grid, cv=5, scoring='neg_mean_squared_error')
+        # grid_search.fit(X_train_pca, y_train)
+        # best_params = grid_search.best_params_
+        # print(f"Best parameters: {best_params}")
+        # model = SVR(kernel="rbf", C=best_params['C'], epsilon=best_params['epsilon'])
+        model.fit(X_train_pca, y_train)
+
+        y_pred = model.predict(X_test_pca)
+        # de-normalize
+        y_mean = y_all_original[test_mask].mean()
+        y_std = y_all_original[test_mask].std()
+        y_pred = y_pred * y_std + y_mean
+        y_test = y_test * y_std + y_mean
+        # print(f"  Predicted: {y_pred}, True : {y_test}")
+        mse = mean_squared_error(y_test, y_pred)
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
+
+        print(f"  MSE: {mse:.4f}, MAE: {mae:.4f}, R²: {r2:.4f}")
+        all_mse.append(mse)
+        all_mae.append(mae)
+        all_r2.append(r2)
+
+        plt.figure(figsize=(10, 4))
+        plt.plot(y_test, label='True', marker='o')
+        plt.plot(y_pred, label='Predicted', marker='x')
+        plt.title(f"LOSO Prediction: Subject {test_subject}, mean = {y_mean:.2f}, std = {y_std:.2f}")
+        plt.xlabel("Sample Index")
+        plt.ylabel("Label Value")
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.savefig(f"figures/early_pca_loso_plot_{test_subject}.png")  
+        plt.show()
+
+    # ========== Visualize ==========
+    print("\nLOSO Final Results:")
+    print(f"Average MSE: {np.mean(all_mse):.4f}")
+    print(f"Average MAE: {np.mean(all_mae):.4f}")
+    print(f"Average R²:  {np.mean(all_r2):.4f}")
+
+    plt.figure(figsize=(12, 4))
+
+    plt.subplot(1, 3, 1)
+    plt.bar(all_subjects, all_mse, color='skyblue')
+    plt.xticks(rotation=45)
+    plt.ylabel("MSE")
+    plt.title("LOSO - MSE per Subject")
+
+    plt.subplot(1, 3, 2)
+    plt.bar(all_subjects, all_mae, color='orange')
+    plt.xticks(rotation=45)
+    plt.ylabel("MAE")
+    plt.title("LOSO - MAE per Subject")
+
+    plt.subplot(1, 3, 3)
+    plt.bar(all_subjects, all_r2, color='green')
+    plt.xticks(rotation=45)
+    plt.ylabel("R²")
+    plt.title("LOSO - R² per Subject")
+
+    plt.tight_layout()
+    plt.savefig("figures/early_pca_loso_results.png")
+    plt.show()
+
+
+def train(dataloader, model_type="SVM"):
     X, y = [], []
     for features, labels in dataloader:
         X.append(features.numpy())
@@ -415,8 +740,6 @@ def train(dataloader, model_type="SVM", plot_loss_curve=True):
     y_train_pred = model.predict(X_train)
     y_test_pred = model.predict(X_test)
     return y_train, y_train_pred, y_test, y_test_pred
-
-
 
 def test(model_type, y_train, y_train_pred, y_test, y_test_pred):
     mse_train = mean_squared_error(y_train, y_train_pred)
@@ -474,6 +797,9 @@ if __name__ == "__main__":
         # print(label)
         break
 
+    print("==============================================================")
+    print("Overall Training and Testing")
+    print("==============================================================")
     print("Training on raw features (No PCA)...")
     y_train, y_train_pred, y_test, y_test_pred = train(dataloader_noPCA, model_type="SVM")
     test("SVM", y_train, y_train_pred, y_test, y_test_pred)
@@ -482,4 +808,13 @@ if __name__ == "__main__":
     y_train, y_train_pred, y_test, y_test_pred = train(dataloader_PCA, model_type="SVM")
     test("SVM", y_train, y_train_pred, y_test, y_test_pred)
 
+
+    print("==============================================================")
+    print("LOSO Training and Testing")
+    print("==============================================================")
+    print("\nRunning LOSO CV on raw features...")
+    loso_cv_evaluation_no_pca(MultiModalDatasetWithFeatureEngineeringNoPCA)
+
+    print("\nRunning LOSO CV on PCA-transformed features...")
+    loso_cv_evaluation_with_pca(MultiModalDatasetWithFeatureEngineeringNoPCA, pca_components=0.95)
 

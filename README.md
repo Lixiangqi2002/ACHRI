@@ -2,7 +2,7 @@
 
 ## Web-based Game for Various Difficulties
 
-This project provides a comprehensive method to calculate the difficulty of 2D platformer game maps. The difficulty score is derived from several key factors, including:
+This project provides a comprehensive method to calculate the difficulty of 2D platformer game maps. The difficulty score is evaluated from several key factors, including:
 
 - **Jump Complexity (J)**: Measures the difficulty of required jumps.
 - **Lava Number (L)**: Counts the number of lava hazards.
@@ -11,12 +11,12 @@ This project provides a comprehensive method to calculate the difficulty of 2D p
 - **Platform Layout Difficulty (P)**: Measures the complexity of the level’s platforms.
 - **Coins Count**: The total number of collectible coins.
 
-The final score is computed using a weighted formula to give an objective measure of a map's difficulty.
-
+We designers evaluated the difficulties of each level game map ourselves. 
 
 ## Model
 
 ### Mid Level Fusion
+#### Overall Metrics
 ```
 Test Loss: 0.0071
 Test MSE:   0.0071
@@ -24,8 +24,24 @@ Test RMSE:  0.0841
 Test MAE:   0.0571
 Test R^2:   0.8206
 ```
+#### LOSO Metrics
+```
+===== LOSO Final Summary =====
+byz | MSE: 0.0078 | MAE: 0.0653 | R²: 0.6207
+lhb | MSE: 0.0187 | MAE: 0.1008 | R²: 0.2463
+lxq | MSE: 0.0147 | MAE: 0.0852 | R²: 0.3462
+qzw | MSE: 0.0137 | MAE: 0.0925 | R²: 0.2815
+wyk | MSE: 0.0240 | MAE: 0.1273 | R²: 0.0434
+zxj | MSE: 0.0085 | MAE: 0.0731 | R²: 0.1291
+
+Average Results:
+MSE: 0.0146
+MAE: 0.0907
+R² : 0.2779
+```
 
 ### Late Level Fusion
+#### Overall Metrics
 ```
 Test Loss: 0.0094
 Test MSE:   0.0094
@@ -33,9 +49,25 @@ Test RMSE:  0.0967
 Test MAE:   0.0685
 Test R^2:   0.7569
 ```
+#### LOSO Metrics
+```
+===== LOSO Final Summary =====
+byz | MSE: 0.0100 | MAE: 0.0746 | R²: 0.5121
+lhb | MSE: 0.0208 | MAE: 0.1141 | R²: 0.1598
+lxq | MSE: 0.0153 | MAE: 0.0898 | R²: 0.3172
+qzw | MSE: 0.0148 | MAE: 0.0932 | R²: 0.2249
+wyk | MSE: 0.0305 | MAE: 0.1472 | R²: -0.2153
+zxj | MSE: 0.0366 | MAE: 0.1828 | R²: -2.7619
+
+Average Results:
+MSE: 0.0214
+MAE: 0.1169
+R² : -0.2938
+```
 
 ### Early Level Fusion
-Without PCA
+#### Without PCA
+##### Overall Metrics
 ```
 SVM Results:
 Train Loss (MSE): 0.0265
@@ -45,8 +77,34 @@ MAE: 0.1221
 R² Score: 0.3333
 95% Confidence Interval for Error: (np.float64(-0.3135153544494832), np.float64(0.30318525426938037))
 ```
+##### LOSO Metrics
+```
+LOSO Fold: Test Subject = byz
+  MSE: 0.0154, MAE: 0.0965, R²: 0.2513
 
-With PCA
+LOSO Fold: Test Subject = lhb
+  MSE: 0.0264, MAE: 0.1221, R²: -0.0630
+
+LOSO Fold: Test Subject = lxq
+  MSE: 0.0251, MAE: 0.1170, R²: -0.1179
+
+LOSO Fold: Test Subject = qzw
+  MSE: 0.0224, MAE: 0.1102, R²: -0.1692
+
+LOSO Fold: Test Subject = wyk
+  MSE: 0.0228, MAE: 0.1196, R²: 0.0936
+
+LOSO Fold: Test Subject = zxj
+  MSE: 0.0099, MAE: 0.0627, R²: -0.0199
+
+LOSO Final Results:
+Average MSE: 0.0203
+Average MAE: 0.1047
+Average R²:  -0.0042
+```
+
+#### With PCA
+##### Overall Metrics
 ```
 SVM Results:
 Train Loss (MSE): 0.0111
@@ -56,8 +114,33 @@ MAE: 0.0851
 R² Score: 0.6453
 95% Confidence Interval for Error: (np.float64(-0.21820402425365654), np.float64(0.2311350794491045))
 ```
+##### LOSO Metrics
+```
+LOSO Fold: Test Subject = byz
+  MSE: 0.0161, MAE: 0.0953, R²: 0.2146
 
-## Pre-trained Encoders
+LOSO Fold: Test Subject = lhb
+  MSE: 0.0233, MAE: 0.1108, R²: 0.0612
+
+LOSO Fold: Test Subject = lxq
+  MSE: 0.0267, MAE: 0.1165, R²: -0.1911
+
+LOSO Fold: Test Subject = qzw
+  MSE: 0.0195, MAE: 0.1080, R²: -0.0209
+
+LOSO Fold: Test Subject = wyk
+  MSE: 0.0220, MAE: 0.1159, R²: 0.1240
+
+LOSO Fold: Test Subject = zxj
+  MSE: 0.0093, MAE: 0.0628, R²: 0.0419
+
+LOSO Final Results:
+Average MSE: 0.0195
+Average MAE: 0.1015
+Average R²:  0.0383
+```
+
+## Pre-trained Encoders (all Overall Metrics)
 
 #### HR & HRV：
 ```

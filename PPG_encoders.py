@@ -42,7 +42,7 @@ class PPGEncoder(nn.Module):
         x = x.permute(0, 2, 1)  # Transform back to (batch_size, new_seq_len, cnn_channels)
         x, _ = self.lstm(x)  # LSTM processes temporal features
         x = x[:, -1, :]  # Take the output of the last time step of LSTM
-        return self.fc(x)  # (batch_size, 128)
+        return self.fc(x) 
 
 
 class EmotionRegressor(nn.Module):

@@ -5,7 +5,8 @@ import numpy as np
 from torch.utils.data import Dataset, DataLoader
 
 class MultiModalDataset(Dataset):
-    def __init__(self, temp_data_dir, ppg_data_dir, hr_data_dir, label_path):
+    def __init__(self, temp_data_dir, ppg_data_dir, hr_data_dir, label_path, loso=False):
+        self.loso = loso
         self.temp_data_dir = temp_data_dir
         self.ppg_data_dir = ppg_data_dir
         self.hr_data_dir = hr_data_dir
@@ -152,13 +153,21 @@ class MultiModalDataset(Dataset):
         
         # get label value (1,)
         label_value = self.person_label_data[person_name]["arousal"][time_idx]#/10  # (1,), normalized to (0,1)
-
-        return (
-            torch.tensor(temp_slice, dtype=torch.float32),  # (6, 6)
-            torch.tensor(ppg_slice, dtype=torch.float32),  # (250, 2)
-            torch.tensor(hr_slice, dtype=torch.float32),  # (50, 2)
-            torch.tensor(label_value, dtype=torch.float32),  # (1,)
-        )
+        if self.loso:
+            return (
+                torch.tensor(temp_slice, dtype=torch.float32),  # (6, 6)
+                torch.tensor(ppg_slice, dtype=torch.float32),  # (250, 2)
+                torch.tensor(hr_slice, dtype=torch.float32),  # (50, 2)
+                torch.tensor(label_value, dtype=torch.float32),  # (1,)
+                person_name
+            )
+        else:
+            return (
+                torch.tensor(temp_slice, dtype=torch.float32),  # (6, 6)
+                torch.tensor(ppg_slice, dtype=torch.float32),  # (250, 2)
+                torch.tensor(hr_slice, dtype=torch.float32),  # (50, 2)
+                torch.tensor(label_value, dtype=torch.float32),  # (1,)
+            )
 
 if __name__ == "__main__":
     temp_data_dir = "data/temp_preprocessed"
@@ -166,10 +175,10 @@ if __name__ == "__main__":
     label_path = "data/labels"
     hr_data_dir = "data/hr_preprocessed"
 
-    dataset = MultiModalDataset(temp_data_dir, ppg_data_dir,hr_data_dir, label_path)
+    dataset = MultiModalDataset(temp_data_dir, ppg_data_dir,hr_data_dir, label_path, loso=True)
     dataloader = DataLoader(dataset, batch_size=32, shuffle=False)
 
-    for temp, ppg, hr, label in dataloader:
+    for temp, ppg, hr, label, subject_id in dataloader:
         print(f"Nose Temperature : {temp.shape}")  # (batch_size, 6, 6)
         print(temp)
         print(f"PPG Data: {ppg.shape}")  # (batch_size, 250, 2)

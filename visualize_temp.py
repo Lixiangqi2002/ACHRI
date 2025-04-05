@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 
-data_dir = "data"
+data_dir = "data/raw_temp"
 
 samples = ["byz", "lhb", "lxq", "qzw", "wyk", "zxj"]
 categories = ["min", "max", "avg"]
@@ -13,7 +13,7 @@ fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 fig.suptitle("Nose Temperature Comparison (Baseline vs Exp, Normalized)", fontsize=16)
 
 for idx, sample in enumerate(samples):
-    row, col = divmod(idx, 3)  # 计算子图位置
+    row, col = divmod(idx, 3) 
     ax = axes[row, col]
     ax.set_title(f"Sample: {sample.upper()}")
     
@@ -40,6 +40,7 @@ for idx, sample in enumerate(samples):
     ax.set_ylabel("Normalized Temperature")
     ax.legend()
     ax.grid()
+    # break
 
 plt.tight_layout(rect=[0, 0, 1, 0.96])
 plt.show()
