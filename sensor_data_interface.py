@@ -1,24 +1,15 @@
-import glob
-import os
-import pandas as pd
-import numpy as np
-import neurokit2 as nk
-import time
-import importlib.util
-import sys
-
-# 全局变量 缓存最新数据
+# Global variables to cache the latest data
 last_thermal_data = None
 last_thermal_time = 0
 
-ppg_signal_buffer = []  # 缓存实时输入的 [N, 2] PPG
-fs = 250  # 采样率 Hz
-hr_cache_length = 10 * fs  # 缓存10s的数据 [2500, 2]
-hr_window_size = 4 * fs  # 窗口大小4s
-hr_step = 1 * fs  # 窗口步长1s
-hr_output_len = 50  # hr output [50, 2]
+ppg_signal_buffer = []  # Cache for real-time input [N, 2] PPG
+fs = 250  # Sampling rate in Hz
+hr_cache_length = 10 * fs  # Cache 10 seconds of data [2500, 2]
+hr_window_size = 4 * fs  # Window size of 4 seconds
+hr_step = 1 * fs  # Window step size of 1 second
+hr_output_len = 50  # HR output [50, 2]
 
-ppg_temp_path = r"D:/programming/COMP0053/PhysioKit" # 记得换成PhysioKit根目录绝对路径
+ppg_temp_path = r"D:/programming/COMP0053/PhysioKit"  # Remember to replace with the absolute path of the PhysioKit root directory
 last_seen_ppg_row = None
 
 # -- Thermal --
@@ -35,21 +26,19 @@ def get_thermal_data(user_name="01_Ben"):
 
     csv_files = [csv_min[0], csv_max[0], csv_avg[0]]
     
-    # for three csv files, read all data into onoe 3*n np array
+    # For three CSV files, read all data into one 3*n numpy array
     thermal_data_array = np.zeros((6, 3), dtype=np.float32)
     
     for idx, file in enumerate(csv_files):
         thermal_df = pd.read_csv(file)
         thermal_data = thermal_df.values.astype(np.float32)
         
-        # 不足6条就不读取 csv
+        # If there are fewer than 6 rows, do not read the CSV
         if thermal_data.shape[0] < 6:
             return
 
-        # 大于6条，读取最近的6条
-
+        # If there are more than 6 rows, read the most recent 6 rows
         thermal_data = thermal_df.iloc[-6:, 0].values.astype(np.float32)
-        # thermal_data = (thermal_data - thermal_data.min()) / (thermal_data.max() - thermal_data.min())
         min_val, max_val = thermal_data.min(), thermal_data.max()
         denom = max_val - min_val
         if denom < 1e-6:
@@ -57,18 +46,16 @@ def get_thermal_data(user_name="01_Ben"):
         else:
             thermal_data = (thermal_data - min_val) / denom
         thermal_data_array[:, idx] = thermal_data
-        # print("Thermal Data", idx, "Sample:", thermal_data)
-        thermal_data_array[:, idx] = thermal_data 
 
     if last_thermal_data is None:
         temp_diff = np.zeros_like(thermal_data_array)
     else:
         temp_diff = thermal_data_array - last_thermal_data
 
-    # 更新缓存
+    # Update cache
     last_thermal_data = thermal_data_array.copy()
 
-    # 拼接成 (6, 6)
+    # Combine into (6, 6)
     thermal_full = np.hstack((thermal_data_array, temp_diff))  # (6, 6)
     thermal_full = np.nan_to_num(thermal_full) 
     print(thermal_full)
@@ -78,7 +65,7 @@ def get_thermal_data(user_name="01_Ben"):
 
 # -- PPG --
 def get_latest_temp_csv(path=ppg_temp_path):
-    csv_files = glob.glob(os.path.join(path, "*_temp.csv")) # 在PhsioKit端存储时保证在其根目录下有一个temp.csv 作为数据存储中转
+    csv_files = glob.glob(os.path.join(path, "*_temp.csv"))  # Ensure there is a temp.csv in the PhysioKit root directory for data storage
     if not csv_files:
         raise FileNotFoundError("No temp CSV file found.")
     return max(csv_files, key=os.path.getmtime)
@@ -87,7 +74,6 @@ def get_latest_temp_csv(path=ppg_temp_path):
 def get_ppg_data():
     global last_seen_ppg_row
 
-    # try:
     file_path = get_latest_temp_csv()
     df = pd.read_csv(file_path)
     ppg_df = df[["PPG A0", "PPG A1"]].dropna()
@@ -99,20 +85,11 @@ def get_ppg_data():
 
     last_row = ppg_data[-1]
 
-    # # check 更新频率
-    # if last_seen_ppg_row is not None and np.array_equal(last_row, last_seen_ppg_row):
-    #     print("PPG data not updated, skipping...")
-    #     return None
-    # else:
-    #     last_seen_ppg_row = last_row
-
     print("PPG Data Shape:", ppg_data.shape)
     print("PPG Data Sample:", ppg_data[:5])
 
     return ppg_data
-    # except Exception as e: # 不行就先随机
-    #     print(f"Error reading PPG data: {str(e)}")
-    #     return np.random.rand(250, 2).astype(np.float32)
+
 
 # -- HR --
 
@@ -148,7 +125,7 @@ def update_ppg_buffer(new_ppg_data):
     else:
         ppg_signal_buffer = np.vstack([ppg_signal_buffer, new_ppg_data])
     
-    # save last 10s data
+    # Save the last 10 seconds of data
     if len(ppg_signal_buffer) > hr_cache_length:
         ppg_signal_buffer = ppg_signal_buffer[-hr_cache_length:]
 
@@ -181,7 +158,7 @@ def get_hr_data():
 
     hr_array = np.stack([hr_list, hrv_list], axis=1).astype(np.float32)
 
-    # reshape to [50, 2]
+    # Reshape to [50, 2]
     if len(hr_array) < hr_output_len:
         pad = np.full((hr_output_len - len(hr_array), 2), [70.0, 0.0], dtype=np.float32)
         hr_array = np.vstack([pad, hr_array])

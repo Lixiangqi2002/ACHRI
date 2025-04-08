@@ -203,3 +203,66 @@ True: 0.9000, Predicted: 0.3665, Error: -0.5335
 True: 0.2000, Predicted: 0.7395, Error: 0.5395
 True: 1.0000, Predicted: 0.3693, Error: -0.6307
 ```
+
+
+## To Run this code
+### Environment Requirments
+
+```
+pip install -r requirements.txt
+```
+
+### Web-Based Game
+
+Start the server:
+```
+python3 server.py
+```
+
+Double Click the `index.html`, use F12 (or your personal settings) to observe the flask logging.
+
+### Data Collection Code
+
+In `PysioKit`, run it on Windows system. Please use two PPG configurations with 250 Hz.
+
+In `PyThermalCamera-Segmentation`, run `main.py` on Linux system. This has integrated the nose segmentation in inference, which will generate the nose temperature min, max and avg in the `.csv` files.
+
+### Train Models and Encoders
+#### Early Fusion Strategy
+Train, Test and Leave-One-Subject-Out Evaluation:
+```
+python3 early_fusion_with_feature_engineering.py
+```
+
+#### Middle Fusion Strategy
+Train, Test: 
+```
+python3 mid_fusion_no_loso.py
+```
+Leave-One-Subject-Out Evaluation:
+```
+python3 mid_fusion_loso.py
+```
+#### Late Fusion Strategy
+Train, Test: 
+```
+python3 late_fusion_no_loso.py
+```
+Leave-One-Subject-Out Evaluation:
+```
+python3 late_fusion_loso.py
+```
+### Real-time Predictions
+#### Linux
+Run `PyThermalCamera-Segmentation/src/main.py` and `windows_client.py` on Windows, this will use TCP connection to transmit the temperature data to Windows (use port 5000).
+#### Windows
+Run `PysioKit` with two PPG sensor on both ears.
+
+Run the `real_time_prediction.py` to use mid-level fusion models for doing emotion scores predictions in real-time.
+```
+python3 real_time_prediction.py
+```
+Run the `real_time_user_study.py`, this will trigger the dynamic game level adapter according to the predicted emotion scores.
+```
+python3 real_time_user_study.py
+```

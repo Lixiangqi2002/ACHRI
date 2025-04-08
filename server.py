@@ -20,7 +20,7 @@ def get_sensor_data():
     return np.array([[heart_rate, skin_conductance, eeg_signal, stress_level]])
 
 def get_sequential_offset():
-    """获取递增的偏移值（一个一个加），并确保不重复"""
+    """Get an incrementing offset value (incremented one by one) and ensure no duplicates"""
     global current_offset
     if current_offset > 23:
         current_offset = 1 
@@ -29,22 +29,22 @@ def get_sequential_offset():
     return offset
 
 def get_unique_random_offset():
-    """生成一个1到23之间的不重复随机数"""
+    """Generate a unique random number between 1 and 23"""
     global used_offsets
-    available_numbers = set(range(1, 24)) - used_offsets  # 计算剩余可用数字
+    available_numbers = set(range(1, 24)) - used_offsets  # Calculate remaining available numbers
 
     if not available_numbers:
-        used_offsets.clear()  # 如果所有数字都用完了，清空集合并重新开始
+        used_offsets.clear()  # If all numbers are used, clear the set and restart
         available_numbers = set(range(1, 24))
 
-    new_offset = random.choice(list(available_numbers))  # 选择一个新数字
-    used_offsets.add(new_offset)  # 记录已经使用的数字
+    new_offset = random.choice(list(available_numbers))  # Choose a new number
+    used_offsets.add(new_offset)  # Record the used number
     return new_offset
 
 @app.route('/predict_level_offset', methods=['GET'])
 def predict_level_offset():
     try:
-        mode = request.args.get('mode', 'random')  # 获取模式参数，默认是递增模式
+        mode = request.args.get('mode', 'random')  # Get the mode parameter, default is random mode
         sensor_data = get_sensor_data()
 
         if mode == 'sequential':
@@ -52,8 +52,8 @@ def predict_level_offset():
         elif mode == 'random':
             predicted_offset_rounded = get_unique_random_offset()
         elif mode == 'model':
-            # 这里可以替换成真实模型预测逻辑
-            predicted_offset_rounded = random.randint(1, 23)  # 假设模型预测随机数
+            # Replace this with real model prediction logic
+            predicted_offset_rounded = random.randint(1, 23)  # Assume the model predicts a random number
         else:
             return jsonify({"error": "Invalid mode. Use 'sequential', 'random', or 'model'."})
 

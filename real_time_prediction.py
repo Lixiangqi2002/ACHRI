@@ -77,8 +77,7 @@ def real_time_sensor():
     hr_data = np.random.rand(50, 2).astype(np.float32)  # [hr, hrv]
 
     # ppg_data = get_ppg_data()
-    # update_ppg_buffer(ppg_data) # 更新缓冲区
-
+    # update_ppg_buffer(ppg_data) 
 
     # Read thermal data from csv
 
@@ -97,4 +96,4 @@ if __name__ == "__main__":
         ppg_data, thermal_data, hr_data = real_time_sensor()
         prediction = real_time_inference(model, ppg_data, thermal_data, hr_data, device)
         print("Prediction:", prediction)
-        time.sleep(1) # 模拟1秒钟获取一次数据
+        time.sleep(1) 

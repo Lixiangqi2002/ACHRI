@@ -33,29 +33,6 @@ def real_time_level_offset():
         print("More predictions below 0.4")
         offset_level = 1
 
-    # current_level = last_current_level
-    # target_level = last_current_level + offset_level
-
-    # if target_level in used_levels:
-    #     print("Target level already played. Finding nearest available level...")
-    #     candidate_offsets = [i for i in range(-3, 4) if i != 0]
-    #     best_offset = None
-    #     min_distance = float("inf")
-
-    #     for off in candidate_offsets:
-    #         candidate = current_level + off
-    #         if candidate not in used_levels and candidate >= 0:
-    #             distance = abs(off - offset_level)
-    #             if distance < min_distance:
-    #                 min_distance = distance
-    #                 best_offset = off
-
-    #     if best_offset is not None:
-    #         offset_level = best_offset
-    #         print(f"Using alternative offset: {offset_level}")
-    #     else:
-    #         print("No available offset. Staying in current level.")
-    #         offset_level = 0
 
 
     print("=== Flask Debug ===")
