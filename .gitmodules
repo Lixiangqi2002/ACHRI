@@ -1,0 +1,7 @@
+[submodule "PhysioKit"]
+    path = PhysioKit
+    url = https://github.com/Lixiangqi2002/PhysioKit.git
+
+[submodule "PyThermalCamera-Segmentation"]
+    path = PyThermalCamera-Segmentation
+    url = https://github.com/Lixiangqi2002/PyThermalCamera-Segmentation.git
