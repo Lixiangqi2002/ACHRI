@@ -279,7 +279,7 @@ baseline_base = "collected_data/baseline_PPG"         # Folder containing subfol
 experiment_base = "collected_data/PPG_trimed_225000"    # Folder containing subfolders for experiment data
 output_base = "Processed_HR_HRV"               # Output base folder
 
-subject_folders = ["yuze", "lhb", "lxq", "qzw", "wyk", "zxj"]
+subject_folders = ["yuze", "002", "003", "005", "004", "006"]
 
 os.makedirs(output_base, exist_ok=True)
 

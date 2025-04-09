@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 data_dir = "data/raw_temp"
 
-samples = ["byz", "lhb", "lxq", "qzw", "wyk", "zxj"]
+samples = ["001", "002", "003", "005", "004", "006"]
 categories = ["min", "max", "avg"]
 colors = {"min": "red", "max": "blue", "avg": "green"}  
 

@@ -114,8 +114,8 @@ def interpolate_signal(times, values, new_sampling_rate):
 fs = 250  # Sampling frequency
 
 # File paths for baseline and experiment data
-baseline_file_path = "collected_data/baseline_PPG/lhb/lhb_Game_baseline_1741371475_622094_747569.csv"
-experiment_file_path = "collected_data/PPG_trimed_225000/lhb/lhb_Game_expCond1_1741372191_419938_430846.csv"
+baseline_file_path = "collected_data/baseline_PPG/002/002_Game_baseline_1741371475_622094_747569.csv"
+experiment_file_path = "collected_data/PPG_trimed_225000/002/002_Game_expCond1_1741372191_419938_430846.csv"
 
 # -----------------------------
 # Baseline Correction Using Recorded Baseline Data

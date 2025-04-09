@@ -27,12 +27,12 @@ Test R^2:   0.8206
 #### LOSO Metrics
 ```
 ===== LOSO Final Summary =====
-byz | MSE: 0.0078 | MAE: 0.0653 | R²: 0.6207
-lhb | MSE: 0.0187 | MAE: 0.1008 | R²: 0.2463
-lxq | MSE: 0.0147 | MAE: 0.0852 | R²: 0.3462
-qzw | MSE: 0.0137 | MAE: 0.0925 | R²: 0.2815
-wyk | MSE: 0.0240 | MAE: 0.1273 | R²: 0.0434
-zxj | MSE: 0.0085 | MAE: 0.0731 | R²: 0.1291
+001 | MSE: 0.0078 | MAE: 0.0653 | R²: 0.6207
+002 | MSE: 0.0187 | MAE: 0.1008 | R²: 0.2463
+003 | MSE: 0.0147 | MAE: 0.0852 | R²: 0.3462
+005 | MSE: 0.0137 | MAE: 0.0925 | R²: 0.2815
+004 | MSE: 0.0240 | MAE: 0.1273 | R²: 0.0434
+006 | MSE: 0.0085 | MAE: 0.0731 | R²: 0.1291
 
 Average Results:
 MSE: 0.0146
@@ -52,12 +52,12 @@ Test R^2:   0.7569
 #### LOSO Metrics
 ```
 ===== LOSO Final Summary =====
-byz | MSE: 0.0100 | MAE: 0.0746 | R²: 0.5121
-lhb | MSE: 0.0208 | MAE: 0.1141 | R²: 0.1598
-lxq | MSE: 0.0153 | MAE: 0.0898 | R²: 0.3172
-qzw | MSE: 0.0148 | MAE: 0.0932 | R²: 0.2249
-wyk | MSE: 0.0305 | MAE: 0.1472 | R²: -0.2153
-zxj | MSE: 0.0366 | MAE: 0.1828 | R²: -2.7619
+001 | MSE: 0.0100 | MAE: 0.0746 | R²: 0.5121
+002 | MSE: 0.0208 | MAE: 0.1141 | R²: 0.1598
+003 | MSE: 0.0153 | MAE: 0.0898 | R²: 0.3172
+005 | MSE: 0.0148 | MAE: 0.0932 | R²: 0.2249
+004 | MSE: 0.0305 | MAE: 0.1472 | R²: -0.2153
+006 | MSE: 0.0366 | MAE: 0.1828 | R²: -2.7619
 
 Average Results:
 MSE: 0.0214
@@ -79,22 +79,22 @@ R² Score: 0.3333
 ```
 ##### LOSO Metrics
 ```
-LOSO Fold: Test Subject = byz
+LOSO Fold: Test Subject = 001
   MSE: 0.0154, MAE: 0.0965, R²: 0.2513
 
-LOSO Fold: Test Subject = lhb
+LOSO Fold: Test Subject = 002
   MSE: 0.0264, MAE: 0.1221, R²: -0.0630
 
-LOSO Fold: Test Subject = lxq
+LOSO Fold: Test Subject = 003
   MSE: 0.0251, MAE: 0.1170, R²: -0.1179
 
-LOSO Fold: Test Subject = qzw
+LOSO Fold: Test Subject = 005
   MSE: 0.0224, MAE: 0.1102, R²: -0.1692
 
-LOSO Fold: Test Subject = wyk
+LOSO Fold: Test Subject = 004
   MSE: 0.0228, MAE: 0.1196, R²: 0.0936
 
-LOSO Fold: Test Subject = zxj
+LOSO Fold: Test Subject = 006
   MSE: 0.0099, MAE: 0.0627, R²: -0.0199
 
 LOSO Final Results:
@@ -116,22 +116,22 @@ R² Score: 0.6453
 ```
 ##### LOSO Metrics
 ```
-LOSO Fold: Test Subject = byz
+LOSO Fold: Test Subject = 001
   MSE: 0.0161, MAE: 0.0953, R²: 0.2146
 
-LOSO Fold: Test Subject = lhb
+LOSO Fold: Test Subject = 002
   MSE: 0.0233, MAE: 0.1108, R²: 0.0612
 
-LOSO Fold: Test Subject = lxq
+LOSO Fold: Test Subject = 003
   MSE: 0.0267, MAE: 0.1165, R²: -0.1911
 
-LOSO Fold: Test Subject = qzw
+LOSO Fold: Test Subject = 005
   MSE: 0.0195, MAE: 0.1080, R²: -0.0209
 
-LOSO Fold: Test Subject = wyk
+LOSO Fold: Test Subject = 004
   MSE: 0.0220, MAE: 0.1159, R²: 0.1240
 
-LOSO Fold: Test Subject = zxj
+LOSO Fold: Test Subject = 006
   MSE: 0.0093, MAE: 0.0628, R²: 0.0419
 
 LOSO Final Results:

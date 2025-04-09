@@ -37,7 +37,7 @@ for temp_type, files in baseline_files.items():
         baseline_means[file] = df.mean().values[0]  # Calculate baseline mean (single column data)
 
 # Process data for each person
-people = ["byz", "lhb", "lxq", "qzw", "wyk", "zxj"]  # Identifiers for 6 people
+people = ["001", "002", "003", "005", "004", "006"]  # Identifiers for 6 people
 
 for person in people:
     plt.figure(figsize=(12, 6))

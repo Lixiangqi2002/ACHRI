@@ -71,7 +71,7 @@ def check_folder_csv_length(folder_path, expected_rows):
 header_path = 'collected_data/PPG'
 input_base = os.path.join(header_path)
 output_base = os.path.join(header_path)
-folder_names = ["yuze", "lhb", "lxq", "qzw", "wyk", "zxj"]
+folder_names = ["yuze", "002", "003", "005", "004", "006"]
 n_rows = 225000               # Change this to your desired fixed length
 
 header_path_baseline = 'collected_data/baseline_PPG'
