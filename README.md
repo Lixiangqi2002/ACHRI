@@ -13,6 +13,8 @@ This project provides a comprehensive method to calculate the difficulty of 2D p
 
 We designers evaluated the difficulties of each level game map ourselves. 
 
+
+
 ## Model
 
 ### Mid Level Fusion
@@ -211,6 +213,10 @@ True: 1.0000, Predicted: 0.3693, Error: -0.6307
 ```
 pip install -r requirements.txt
 ```
+
+This project uses customized versions of:
+- [PhysioKit (modified)](https://github.com/Lixiangqi2002/PhysioKit)
+- [PyThermalCamera-Segmentation (modified)](https://github.com/Lixiangqi2002/PyThermalCamera-Segmentation)
 
 ### Web-Based Game
 
