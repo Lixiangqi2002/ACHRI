@@ -213,7 +213,11 @@ True: 1.0000, Predicted: 0.3693, Error: -0.6307
 ```
 pip install -r requirements.txt
 ```
-
+```
+git clone https://github.com/Lixiangqi2002/ACHRI.git
+cd ACHRI
+git submodule update --init --recursive
+```
 This project uses customized versions of:
 - [PhysioKit (modified)](https://github.com/Lixiangqi2002/PhysioKit)
 - [PyThermalCamera-Segmentation (modified)](https://github.com/Lixiangqi2002/PyThermalCamera-Segmentation)
